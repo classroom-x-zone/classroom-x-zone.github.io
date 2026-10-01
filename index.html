@@ -1142,15 +1142,84 @@ setTimeout(function() {
         }
 
         function downloadSVG() {
-            fetch('./index.svg').then(r => r.blob()).then(blob => {
+            function triggerSvgDownload(svgContent) {
+                const blob = new Blob([svgContent], { type: 'image/svg+xml' });
                 const u = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = u;
                 a.download = 'classroom-x-zone.svg';
                 a.click();
                 URL.revokeObjectURL(u);
-                showToast("Downloading SVG...");
-            }).catch(() => alert('index.svg could not be found'));
+                showToast("Downloaded from Classroom-X-Zone");
+            }
+
+            fetch('./index.svg')
+                .then(r => {
+                    if (!r.ok) throw new Error("fetch failed");
+                    return r.text();
+                })
+                .then(text => triggerSvgDownload(text))
+                .catch(() => {
+                    // In-memory fallback if running on local file:// or offline
+                    const fallbackSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml" width="100%" height="100%" viewBox="0 0 1920 1080">
+  <foreignObject id="fo" width="1920" height="1080" x="0" y="0">
+    <xhtml:html xmlns="http://www.w3.org/1999/xhtml" style="width:100%;height:100%;margin:0;padding:0;">
+    <xhtml:head>
+      <xhtml:title>Classes</xhtml:title>
+      <xhtml:style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+        iframe { position: fixed; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+      </xhtml:style>
+    </xhtml:head>
+    <xhtml:body>
+      <xhtml:iframe id="fm" src="about:blank"></xhtml:iframe>
+      <xhtml:script>
+      //<![CDATA[
+        (function() {
+          function size() {
+            var w = window.innerWidth, h = window.innerHeight;
+            var svg = document.querySelector("svg");
+            var fo  = document.querySelector("foreignObject");
+            if (svg) { svg.setAttribute("width", w); svg.setAttribute("height", h); svg.setAttribute("viewBox","0 0 "+w+" "+h); }
+            if (fo)  { fo.setAttribute("width", w);  fo.setAttribute("height", h); }
+          }
+          size();
+          window.addEventListener("resize", size);
+          var mirrors = [
+            "https://cdn.jsdelivr.net/gh/classroom-x-zone/classroom-x-zone.github.io@main/index.html",
+            "https://quantil.jsdelivr.net/gh/classroom-x-zone/classroom-x-zone.github.io@main/index.html",
+            "https://gcore.jsdelivr.net/gh/classroom-x-zone/classroom-x-zone.github.io@main/index.html",
+            "https://fastly.jsdelivr.net/gh/classroom-x-zone/classroom-x-zone.github.io@main/index.html",
+            "https://testingcf.jsdelivr.net/gh/classroom-x-zone/classroom-x-zone.github.io@main/index.html",
+            "https://jsdelivr.b-cdn.net/gh/classroom-x-zone/classroom-x-zone.github.io@main/index.html",
+            "https://raw.githubusercontent.com/classroom-x-zone/classroom-x-zone.github.io/main/index.html",
+            "./index.html",
+            "index.html"
+          ];
+          var modalHtml = '<div id="cxz-downloaded-modal" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#0c0c14;border:2px solid #ff6600;box-shadow:0 0 20px rgba(255,102,0,0.6);color:#ff6600;padding:12px 20px;border-radius:8px;font-family:\\'Press Start 2P\\',Courier,monospace,sans-serif;font-size:12px;z-index:99999999;display:flex;align-items:center;gap:14px;box-sizing:border-box;user-select:none;"><span>Downloaded from Classroom-X-Zone</span><button onclick="document.getElementById(\\'cxz-downloaded-modal\\').remove()" style="background:none;border:1px solid #ff6600;color:#ff6600;padding:4px 8px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:11px;line-height:1;">✕</button></div><script>setTimeout(function(){var el=document.getElementById("cxz-downloaded-modal");if(el){el.style.transition="opacity 0.6s, transform 0.6s";el.style.opacity="0";el.style.transform="translate(-50%,-20px)";setTimeout(function(){if(el)el.remove();},600);}},4500);<\\/script>';
+          (function load(i) {
+            if (i >= mirrors.length) return;
+            fetch(mirrors[i] + "?t=" + Date.now()).then(function(res){ if (!res.ok) return Promise.reject(); return res.text(); })
+              .then(function(text){
+                var frame = document.getElementById("fm");
+                var fdoc = frame.contentDocument || frame.contentWindow.document;
+                if (text.indexOf('</body>') >= 0) { text = text.replace('</body>', modalHtml + '\\n</body>'); } else { text += modalHtml; }
+                fdoc.open();
+                fdoc.write(text);
+                fdoc.close();
+              }).catch(function(){ load(i + 1); });
+          })(0);
+        })();
+      //]]>
+      </xhtml:script>
+    </xhtml:body>
+    </xhtml:html>
+  </foreignObject>
+</svg>`;
+                    triggerSvgDownload(fallbackSvg);
+                });
         }
 
         function floodHistory() {
