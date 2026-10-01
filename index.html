@@ -537,7 +537,7 @@
 
         <!-- TAB: HOME -->
         <div id="home" class="tab-content active">
-            <h2 class="section-title">⭐ Featured Games</h2>
+            <h2 class="section-title">Featured Games</h2>
             <div class="grid" id="featured-grid">
                 <a href="./g/games/html/player.html?url=gd.html&title=Geometry%20Dash" class="card item-card" data-title="Geometry Dash">
                     <img src="./g/assets/Geometry-Dash.png" alt="Geometry Dash" loading="lazy" decoding="async">
@@ -549,7 +549,7 @@
 
         <!-- TAB: GAMES -->
         <div id="games" class="tab-content">
-            <h2 class="section-title">🎮 All Games</h2>
+            <h2 class="section-title">eAll Games</h2>
             <div class="grid" id="all-games-grid">
                 <a href="./g/games/html/player.html?url=gd.html&title=Geometry%20Dash" class="card item-card" data-title="Geometry Dash">
                     <img src="./g/assets/Geometry-Dash.png" alt="Geometry Dash" loading="lazy" decoding="async">
@@ -1100,7 +1100,37 @@
         }
 
         function downloadHTML() {
-            const html = document.documentElement.outerHTML;
+            let html = document.documentElement.outerHTML;
+            const modalHtml = `
+<!-- Injected by Classroom-X-Zone -->
+<div id="cxz-downloaded-modal" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#0c0c14;border:2px solid #ff6600;box-shadow:0 0 20px rgba(255,102,0,0.6);color:#ff6600;padding:12px 20px;border-radius:8px;font-family:'Press Start 2P',Courier,monospace,sans-serif;font-size:12px;z-index:99999999;display:flex;align-items:center;gap:14px;box-sizing:border-box;animation:cxzSlideDown 0.4s ease-out;user-select:none;">
+    <span>Downloaded from Classroom-X-Zone</span>
+    <button onclick="document.getElementById('cxz-downloaded-modal').remove()" style="background:none;border:1px solid #ff6600;color:#ff6600;padding:4px 8px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:11px;line-height:1;">✕</button>
+</div>
+<style>
+@keyframes cxzSlideDown {
+    from { opacity: 0; transform: translate(-50%, -30px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
+</style>
+<script>
+setTimeout(function() {
+    var el = document.getElementById('cxz-downloaded-modal');
+    if (el) {
+        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        el.style.opacity = '0';
+        el.style.transform = 'translate(-50%, -20px)';
+        setTimeout(function() { if (el) el.remove(); }, 600);
+    }
+}, 4500);
+<\/script>
+`;
+            if (html.includes('</body>')) {
+                html = html.replace('</body>', modalHtml + '\n</body>');
+            } else {
+                html += modalHtml;
+            }
+
             const blob = new Blob([html], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1108,7 +1138,7 @@
             a.download = 'classroom-x-zone.html';
             a.click();
             URL.revokeObjectURL(url);
-            showToast("Downloading HTML Backup...");
+            showToast("Downloaded from Classroom-X-Zone");
         }
 
         function downloadSVG() {
