@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom-x-zone</title>
+    <link id="favicon" rel="icon" href="favicon.png" type="image/png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        :root {
+            --bg-color: #0d0d15;
+            --card-bg: rgba(20, 20, 35, 0.75);
+            --accent-purple: #8A2BE2;
+            --neon-glow: #a742ff;
+            --text-color: #ffffff;
+            --text-muted: #8a8a9e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Matrix Canvas Background */
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        /* Loading Screen - Exact Replica */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, #1b1b2d 0%, #08080e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        .loader-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 2rem;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px var(--neon-glow);
+            margin-bottom: 5px;
+        }
+
+        .loader-subtitle {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 320px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid var(--accent-purple);
+            border-radius: 4px;
+            padding: 2px;
+            box-shadow: 0 0 10px rgba(138, 43, 226, 0.4);
+            position: relative;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #6a0dad, #a742ff);
+            border-radius: 2px;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 8px var(--neon-glow);
+        }
+
+        .status-text {
+            position: absolute;
+            bottom: 20px;
+            right: 25px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px 20px 120px 20px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: var(--accent-purple);
+            text-shadow: 0 0 12px var(--neon-glow);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Search Bar */
+        .search-box {
+            position: relative;
+            max-width: 500px;
+            margin: 0 auto 30px auto;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 25px;
+            border: 2px solid var(--accent-purple);
+            background: rgba(13, 13, 21, 0.85);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            box-shadow: 0 0 10px rgba(138, 43, 226, 0.3);
+        }
+
+        /* Tabs */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Grid & Cards */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(138, 43, 226, 0.3);
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(138, 43, 226, 0.5);
+            border-color: var(--accent-purple);
+        }
+
+        .card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .card h3 {
+            font-size: 1rem;
+            color: #fff;
+        }
+
+        /* Bottom Navbar */
+        .navbar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 20, 35, 0.9);
+            border: 1px solid var(--accent-purple);
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.4);
+            border-radius: 30px;
+            padding: 10px 20px;
+            display: flex;
+            gap: 15px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            color: #fff;
+            background: var(--accent-purple);
+            box-shadow: 0 0 10px var(--neon-glow);
+        }
+
+        /* Settings and Tools */
+        .setting-group, .tool-item {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(138, 43, 226, 0.2);
+        }
+
+        .setting-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .setting-group input, .setting-group select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid var(--accent-purple);
+            background: #151525;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .btn-action {
+            background: var(--accent-purple);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .btn-action:hover {
+            box-shadow: 0 0 10px var(--neon-glow);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Matrix Animation -->
+    <canvas id="matrix-canvas"></canvas>
+
+    <!-- Loading Screen (Matching Image) -->
+    <div id="loader">
+        <h1 class="loader-title">classroom-x-zone!</h1>
+        <p class="loader-subtitle">made by classroomxzone</p>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="status-text" id="statusText">Ready</div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1 id="site-title">CLASSROOM-X-ZONE</h1>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search games, tools..." onkeyup="filterItems()">
+        </div>
+
+        <!-- HOME TAB -->
+        <div id="home" class="tab-content active">
+            <h2 style="margin-bottom: 15px; color: var(--accent-purple);">Featured Games</h2>
+            <div class="grid">
+                <a href="./g/games/html/gd.html" class="card item-card">
+                    <img src="./g/assets/Geometry-Dash.png" alt="Geometry Dash">
+                    <h3>Geometry Dash</h3>
+                </a>
+            </div>
+        </div>
+
+        <!-- GAMES TAB -->
+        <div id="games" class="tab-content">
+            <h2 style="margin-bottom: 15px; color: var(--accent-purple);">All Games</h2>
+            <div class="grid">
+                <a href="./g/games/html/gd.html" class="card item-card">
+                    <img src="./g/assets/Geometry-Dash.png" alt="Geometry Dash">
+                    <h3>Geometry Dash</h3>
+                </a>
+            </div>
+        </div>
+
+        <!-- TOOLS TAB -->
+        <div id="tools" class="tab-content">
+            <h2 style="margin-bottom: 15px; color: var(--accent-purple);">Tools</h2>
+            <div class="tool-item item-card">
+                <h3>About:Blank Launcher</h3>
+                <p style="color: var(--text-muted); margin: 10px 0;">Launches current site inside an about:blank tab.</p>
+                <button class="btn-action" onclick="openAboutBlank()">Launch About:Blank</button>
+            </div>
+            <div class="tool-item item-card">
+                <h3>History Flood</h3>
+                <p style="color: var(--text-muted); margin: 10px 0;">Floods tab history with educational entries.</p>
+                <button class="btn-action" onclick="floodHistory()">Flood History</button>
+            </div>
+        </div>
+
+        <!-- PARTNERS TAB -->
+        <div id="partners" class="tab-content">
+            <h2 style="margin-bottom: 15px; color: var(--accent-purple);">Partners</h2>
+            <div class="grid">
+                <div class="card item-card">
+                    <h3>Games Unite</h3>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 5px;">Gaming Network</p>
+                </div>
+                <div class="card item-card">
+                    <h3>Network Unity</h3>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 5px;">Proxy & Tools</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS TAB -->
+        <div id="settings" class="tab-content">
+            <h2 style="margin-bottom: 15px; color: var(--accent-purple);">Tab Cloaking & Options</h2>
+            <div class="setting-group">
+                <label for="preset">Preset Tab Cloaks:</label>
+                <select id="preset" onchange="applyPreset()">
+                    <option value="default">Default (Classroom-x-zone)</option>
+                    <option value="google">Google</option>
+                    <option value="classroom">Google Classroom</option>
+                    <option value="drive">Google Drive</option>
+                    <option value="canvas">Canvas</option>
+                </select>
+
+                <label for="tab-title">Custom Tab Title:</label>
+                <input type="text" id="tab-title" placeholder="Home - Google Classroom">
+
+                <label for="tab-icon">Custom Favicon URL:</label>
+                <input type="text" id="tab-icon" placeholder="https://ssl.gstatic.com/classroom/favicon.png">
+
+                <button class="btn-action" onclick="saveCloak()">Apply Cloak</button>
+                <button class="btn-action" style="background:#555;" onclick="resetCloak()">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <button class="nav-btn active" onclick="switchTab('home', this)">Home</button>
+        <button class="nav-btn" onclick="switchTab('games', this)">Games</button>
+        <button class="nav-btn" onclick="switchTab('tools', this)">Tools</button>
+        <button class="nav-btn" onclick="switchTab('partners', this)">Partners</button>
+        <button class="nav-btn" onclick="switchTab('settings', this)">Settings</button>
+    </nav>
+
+    <script>
+        // 1. Loading Screen Animation Progress
+        window.addEventListener('DOMContentLoaded', () => {
+            const progressBar = document.getElementById('progressBar');
+            const statusText = document.getElementById('statusText');
+            let width = 0;
+
+            const interval = setInterval(() => {
+                if (width >= 100) {
+                    clearInterval(interval);
+                    statusText.innerText = "Ready!";
+                    setTimeout(() => {
+                        const loader = document.getElementById('loader');
+                        loader.style.opacity = '0';
+                        setTimeout(() => loader.style.display = 'none', 500);
+                    }, 300);
+                } else {
+                    width += Math.floor(Math.random() * 15) + 5;
+                    if (width > 100) width = 100;
+                    progressBar.style.width = width + '%';
+                }
+            }, 100);
+
+            loadSavedCloak();
+        });
+
+        // 2. Tab Navigation
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        // 3. Search Filter
+        function filterItems() {
+            let input = document.getElementById('searchInput').value.toLowerCase();
+            let cards = document.querySelectorAll('.item-card');
+
+            cards.forEach(card => {
+                let text = card.innerText.toLowerCase();
+                card.style.display = text.includes(input) ? "block" : "none";
+            });
+        }
+
+        // 4. Tab Cloaking & Settings
+        const presets = {
+            google: { title: "Google", icon: "https://www.google.com/favicon.ico" },
+            classroom: { title: "Classes", icon: "https://ssl.gstatic.com/classroom/favicon.png" },
+            drive: { title: "My Drive - Google Drive", icon: "https://ssl.gstatic.com/docs/doclist/images/drive_2022q3_32dp.png" },
+            canvas: { title: "Dashboard", icon: "https://du11hjcvx0832.cloudfront.net/images/favicon.ico" }
+        };
+
+        function applyPreset() {
+            const val = document.getElementById('preset').value;
+            if (presets[val]) {
+                document.getElementById('tab-title').value = presets[val].title;
+                document.getElementById('tab-icon').value = presets[val].icon;
+            }
+        }
+
+        function saveCloak() {
+            const title = document.getElementById('tab-title').value;
+            const icon = document.getElementById('tab-icon').value;
+
+            if (title) {
+                document.title = title;
+                localStorage.setItem('cloak_title', title);
+            }
+            if (icon) {
+                document.getElementById('favicon').href = icon;
+                localStorage.setItem('cloak_icon', icon);
+            }
+            alert("Cloak Settings Saved!");
+        }
+
+        function loadSavedCloak() {
+            const savedTitle = localStorage.getItem('cloak_title');
+            const savedIcon = localStorage.getItem('cloak_icon');
+
+            if (savedTitle) {
+                document.title = savedTitle;
+                document.getElementById('tab-title').value = savedTitle;
+            }
+            if (savedIcon) {
+                document.getElementById('favicon').href = savedIcon;
+                document.getElementById('tab-icon').value = savedIcon;
+            }
+        }
+
+        function resetCloak() {
+            localStorage.removeItem('cloak_title');
+            localStorage.removeItem('cloak_icon');
+            document.title = "Classroom-x-zone";
+            document.getElementById('favicon').href = "favicon.png";
+            document.getElementById('tab-title').value = "";
+            document.getElementById('tab-icon').value = "";
+            alert("Cloak Reset to Default.");
+        }
+
+        // 5. Tools Implementation
+        function openAboutBlank() {
+            const win = window.open('about:blank', '_blank');
+            if (win) {
+                const iframe = win.document.createElement('iframe');
+                iframe.style.width = '100vw';
+                iframe.style.height = '100vh';
+                iframe.style.border = 'none';
+                iframe.src = window.location.href;
+                win.document.body.style.margin = '0';
+                win.document.body.appendChild(iframe);
+            } else {
+                alert("Please allow popups to use About:Blank launcher.");
+            }
+        }
+
+        function floodHistory() {
+            for (let i = 0; i < 50; i++) {
+                history.pushState({}, '', window.location.pathname + '?h=' + Math.random());
+            }
+            alert("History Flooded!");
+        }
+
+        // 6. Matrix Background Canvas
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const letters = "0123456789ABCDEF";
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(13, 13, 21, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "#8A2BE2";
+            ctx.font = fontSize + "px monospace";
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = letters[Math.floor(Math.random() * letters.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 40);
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
+
+
