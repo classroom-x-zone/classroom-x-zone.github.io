@@ -1,782 +1,964 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Launcher</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom-X-Zone Launcher</title>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+    <style>
+        * {
+            box-sizing: border-box;
+        }
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #080808;
-      color: white;
-      font-family: Arial, sans-serif;
-    }
+        html,
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+        }
 
-    button {
-      padding: 16px 30px;
-      border: 0;
-      border-radius: 10px;
-      background: #22c55e;
-      color: white;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+        body {
+            background: #080808;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+        }
 
-    button:hover {
-      background: #16a34a;
-    }
-  </style>
+        #launchButton {
+            padding: 16px 30px;
+            border: 0;
+            border-radius: 10px;
+            background: #22c55e;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #launchButton:hover {
+            background: #16a34a;
+        }
+    </style>
 </head>
 
 <body>
 
-  <button id="launchButton">Launch Site</button>
+    <button id="launchButton">
+        Launch Site
+    </button>
 
-  <script>
-    /*
-     * ============================================================
-     * CONFIG
-     * ============================================================
-     */
-
-    const REPO =
-      "https://cdn.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/";
-
-    const SITE_URL =
-      REPO + "index.html";
-
-    const GAME_BASE =
-      REPO + "g/games/html/";
-
-
-    /*
-     * ============================================================
-     * LAUNCHER
-     * ============================================================
-     */
-
-    document
-      .getElementById("launchButton")
-      .addEventListener("click", launchSite);
-
-
-    async function launchSite() {
-
-      /*
-       * Open about:blank immediately.
-       */
-      const win = window.open(
-        "about:blank",
-        "_blank"
-      );
-
-      if (!win) {
-        alert(
-          "Please allow popups for this site."
-        );
-        return;
-      }
-
-
-      /*
-       * Show a temporary loading page.
-       */
-      win.document.open();
-
-      win.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Loading...</title>
-          <style>
-            body {
-              margin: 0;
-              background: #080808;
-              color: white;
-              font-family: Arial, sans-serif;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              height: 100vh;
-            }
-          </style>
-        </head>
-
-        <body>
-          Loading...
-        </body>
-        </html>
-      `);
-
-      win.document.close();
-
-
-      try {
-
+    <script>
         /*
-         * Fetch index.html from jsDelivr.
+         * ============================================================
+         * CONFIGURATION
+         * ============================================================
          */
-        await loadPage(
-          win,
-          SITE_URL,
-          REPO
-        );
 
-      } catch (error) {
+        const REPO =
+            "https://cdn.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/";
 
-        showError(
-          win,
-          error
-        );
-      }
-    }
+        const SITE_URL =
+            REPO + "index.html";
 
-
-    /*
-     * ============================================================
-     * LOAD A NORMAL HTML PAGE
-     * ============================================================
-     */
-
-    async function loadPage(
-      win,
-      url,
-      baseURL
-    ) {
-
-      const response =
-        await fetch(url);
-
-      if (!response.ok) {
-
-        throw new Error(
-          "Failed to load page: " +
-          url +
-          " (" +
-          response.status +
-          ")"
-        );
-      }
-
-
-      const html =
-        await response.text();
-
-
-      /*
-       * Parse the HTML.
-       */
-      const parser =
-        new DOMParser();
-
-      const doc =
-        parser.parseFromString(
-          html,
-          "text/html"
-        );
-
-
-      /*
-       * Fix CSS, JS, images, etc.
-       */
-      fixResources(
-        doc,
-        baseURL
-      );
-
-
-      /*
-       * Convert internal links
-       * into virtual links.
-       */
-      fixLinks(
-        doc,
-        baseURL
-      );
-
-
-      /*
-       * Write the page into the SAME
-       * about:blank tab.
-       */
-      win.document.open();
-
-      win.document.write(
-        "<!DOCTYPE html>\n" +
-        doc.documentElement.outerHTML
-      );
-
-      win.document.close();
-
-
-      /*
-       * Install the virtual navigation
-       * system into the newly loaded page.
-       */
-      installNavigation(
-        win
-      );
-
-
-      /*
-       * Set the title.
-       */
-      if (doc.title) {
-        win.document.title =
-          doc.title;
-      }
-    }
-
-
-    /*
-     * ============================================================
-     * LOAD A GAME
-     * ============================================================
-     */
-
-    async function loadGame(
-      win,
-      url
-    ) {
-
-      const response =
-        await fetch(url);
-
-      if (!response.ok) {
-
-        throw new Error(
-          "Failed to load game: " +
-          url +
-          " (" +
-          response.status +
-          ")"
-        );
-      }
-
-
-      let html =
-        await response.text();
-
-
-      /*
-       * Parse the game HTML.
-       */
-      const parser =
-        new DOMParser();
-
-      const doc =
-        parser.parseFromString(
-          html,
-          "text/html"
-        );
-
-
-      /*
-       * Game files are located inside:
-       *
-       * /g/games/html/
-       *
-       * Therefore ./something.js,
-       * ./something.css, etc. should
-       * resolve from that directory.
-       */
-      fixResources(
-        doc,
-        GAME_BASE
-      );
-
-
-      /*
-       * Fix links inside the game.
-       */
-      fixLinks(
-        doc,
-        GAME_BASE
-      );
-
-
-      /*
-       * Put the game directly into
-       * the existing about:blank tab.
-       */
-      win.document.open();
-
-      win.document.write(
-        "<!DOCTYPE html>\n" +
-        doc.documentElement.outerHTML
-      );
-
-      win.document.close();
-
-
-      /*
-       * Reinstall navigation.
-       */
-      installNavigation(
-        win
-      );
-
-
-      /*
-       * Set game title.
-       */
-      if (doc.title) {
-        win.document.title =
-          doc.title;
-      }
-    }
-
-
-    /*
-     * ============================================================
-     * FIX RESOURCES
-     * ============================================================
-     *
-     * Changes:
-     *
-     * ./style.css
-     *        ↓
-     * https://cdn.jsdelivr.net/.../style.css
-     *
-     * ./game.js
-     *        ↓
-     * https://cdn.jsdelivr.net/.../game.js
-     */
-
-    function fixResources(
-      doc,
-      baseURL
-    ) {
-
-      const attributes = [
-        "src",
-        "href",
-        "poster",
-        "action"
-      ];
-
-
-      for (
-        const attribute
-        of attributes
-      ) {
-
-        const elements =
-          doc.querySelectorAll(
-            "[" + attribute + "]"
-          );
-
-
-        for (
-          const element
-          of elements
-        ) {
-
-          const value =
-            element.getAttribute(
-              attribute
-            );
-
-
-          if (!value) {
-            continue;
-          }
-
-
-          /*
-           * Don't modify special URLs.
-           */
-          if (
-            value.startsWith("data:") ||
-            value.startsWith("blob:") ||
-            value.startsWith("javascript:") ||
-            value.startsWith("mailto:") ||
-            value.startsWith("tel:") ||
-            value.startsWith("#") ||
-            /^[a-z][a-z0-9+.-]*:/i.test(value)
-          ) {
-            continue;
-          }
-
-
-          try {
-
-            const absoluteURL =
-              new URL(
-                value,
-                baseURL
-              ).href;
-
-
-            element.setAttribute(
-              attribute,
-              absoluteURL
-            );
-
-          } catch (error) {
-
-            console.warn(
-              "Could not resolve resource:",
-              value
-            );
-          }
-        }
-      }
-    }
-
-
-    /*
-     * ============================================================
-     * FIX INTERNAL LINKS
-     * ============================================================
-     *
-     * Instead of allowing:
-     *
-     * about:blank -> jsDelivr/player.html
-     *
-     * we store the URL in:
-     *
-     * data-virtual-url
-     *
-     * and fetch it ourselves.
-     */
-
-    function fixLinks(
-      doc,
-      baseURL
-    ) {
-
-      const links =
-        doc.querySelectorAll(
-          "a[href]"
-        );
-
-
-      for (
-        const link
-        of links
-      ) {
-
-        const href =
-          link.getAttribute(
-            "href"
-          );
-
-
-        if (!href) {
-          continue;
-        }
+        const GAME_BASE =
+            REPO + "g/games/html/";
 
 
         /*
-         * Don't modify these.
+         * ============================================================
+         * LAUNCH
+         * ============================================================
          */
-        if (
-          href.startsWith("#") ||
-          href.startsWith("javascript:") ||
-          href.startsWith("mailto:") ||
-          href.startsWith("tel:")
-        ) {
-          continue;
-        }
+
+        document
+            .getElementById("launchButton")
+            .addEventListener("click", launchSite);
 
 
-        let absoluteURL;
-
-
-        try {
-
-          absoluteURL =
-            new URL(
-              href,
-              baseURL
-            ).href;
-
-        } catch (error) {
-
-          continue;
-        }
-
-
-        /*
-         * Only intercept files
-         * belonging to our CDN repo.
-         */
-        if (
-          !absoluteURL.startsWith(REPO)
-        ) {
-          continue;
-        }
-
-
-        /*
-         * Store the URL without
-         * changing the visible link.
-         */
-        link.dataset.virtualUrl =
-          absoluteURL;
-
-
-        /*
-         * Remove href so the browser
-         * cannot navigate away.
-         */
-        link.removeAttribute(
-          "href"
-        );
-
-
-        link.style.cursor =
-          "pointer";
-      }
-    }
-
-
-    /*
-     * ============================================================
-     * VIRTUAL NAVIGATION
-     * ============================================================
-     */
-
-    function installNavigation(
-      win
-    ) {
-
-      const doc =
-        win.document;
-
-
-      /*
-       * Avoid duplicate listeners.
-       */
-      if (
-        doc.documentElement.dataset
-          .virtualNavigationInstalled === "true"
-      ) {
-        return;
-      }
-
-
-      doc.documentElement.dataset
-        .virtualNavigationInstalled =
-        "true";
-
-
-      doc.addEventListener(
-        "click",
-        async function(event) {
-
-          /*
-           * Find the clicked link.
-           */
-          const link =
-            event.target.closest(
-              "[data-virtual-url]"
-            );
-
-
-          if (!link) {
-            return;
-          }
-
-
-          /*
-           * Stop normal navigation.
-           */
-          event.preventDefault();
-
-          event.stopPropagation();
-
-
-          const url =
-            link.dataset.virtualUrl;
-
-
-          if (!url) {
-            return;
-          }
-
-
-          try {
+        async function launchSite() {
 
             /*
-             * Check whether this is a game.
+             * Open the about:blank tab immediately.
              */
-            if (
-              url.startsWith(GAME_BASE)
+            const win =
+                window.open("about:blank", "_blank");
+
+
+            if (!win) {
+                alert(
+                    "Please allow popups for this site."
+                );
+                return;
+            }
+
+
+            /*
+             * Temporary loading screen.
+             */
+            win.document.open();
+
+            win.document.write(`
+                <!DOCTYPE html>
+
+                <html>
+                <head>
+                    <title>Loading...</title>
+
+                    <style>
+                        html,
+                        body {
+                            margin: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: #080808;
+                            color: white;
+                            font-family: Arial, sans-serif;
+                        }
+
+                        body {
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        }
+                    </style>
+                </head>
+
+                <body>
+                    Loading Classroom-X-Zone...
+                </body>
+
+                </html>
+            `);
+
+            win.document.close();
+
+
+            try {
+
+                /*
+                 * Load the actual index page.
+                 */
+                await loadVirtualPage(
+                    win,
+                    SITE_URL,
+                    REPO
+                );
+
+            } catch (error) {
+
+                showError(
+                    win,
+                    error
+                );
+            }
+        }
+
+
+        /*
+         * ============================================================
+         * LOAD VIRTUAL PAGE
+         * ============================================================
+         *
+         * This fetches the HTML but NEVER navigates the browser
+         * to the jsDelivr URL.
+         */
+
+        async function loadVirtualPage(
+            win,
+            url,
+            baseURL
+        ) {
+
+            const response =
+                await fetch(url);
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Failed to fetch:\n" +
+                    url +
+                    "\n\nHTTP " +
+                    response.status
+                );
+            }
+
+
+            const html =
+                await response.text();
+
+
+            /*
+             * Parse the downloaded HTML.
+             */
+            const parser =
+                new DOMParser();
+
+            const doc =
+                parser.parseFromString(
+                    html,
+                    "text/html"
+                );
+
+
+            /*
+             * --------------------------------------------------------
+             * VERY IMPORTANT
+             * --------------------------------------------------------
+             *
+             * Add a <base> element.
+             *
+             * This fixes things like player.html:
+             *
+             *     iframe.src = "gd.html"
+             *
+             * Without this, the browser tries:
+             *
+             *     about:blank/gd.html
+             *
+             * With this, it correctly uses:
+             *
+             *     /g/games/html/gd.html
+             */
+
+            setBaseURL(
+                doc,
+                baseURL
+            );
+
+
+            /*
+             * Fix relative resources.
+             */
+            fixResources(
+                doc,
+                baseURL
+            );
+
+
+            /*
+             * Mark internal links for our
+             * virtual navigation system.
+             */
+            fixInternalLinks(
+                doc,
+                baseURL
+            );
+
+
+            /*
+             * Add a small script before the
+             * page's existing scripts execute.
+             *
+             * This makes virtual navigation
+             * available to the site's own code.
+             */
+            injectNavigationAPI(
+                doc
+            );
+
+
+            /*
+             * Replace the CURRENT about:blank
+             * document.
+             */
+            win.document.open();
+
+            win.document.write(
+                "<!DOCTYPE html>\n" +
+                doc.documentElement.outerHTML
+            );
+
+            win.document.close();
+
+
+            /*
+             * Install click interception after
+             * the page exists.
+             */
+            installNavigation(
+                win
+            );
+
+
+            /*
+             * Set title.
+             */
+            if (doc.title) {
+                win.document.title =
+                    doc.title;
+            }
+        }
+
+
+        /*
+         * ============================================================
+         * SET BASE URL
+         * ============================================================
+         */
+
+        function setBaseURL(
+            doc,
+            baseURL
+        ) {
+
+            let base =
+                doc.querySelector("base");
+
+
+            if (!base) {
+
+                base =
+                    doc.createElement("base");
+
+                doc.head.prepend(
+                    base
+                );
+            }
+
+
+            /*
+             * Make all relative URLs use
+             * the virtual CDN location.
+             */
+            base.href =
+                baseURL;
+        }
+
+
+        /*
+         * ============================================================
+         * FIX RESOURCES
+         * ============================================================
+         *
+         * Converts relative resources such as:
+         *
+         * ./game.js
+         * ./style.css
+         * ./assets/image.png
+         *
+         * into CDN URLs.
+         */
+
+        function fixResources(
+            doc,
+            baseURL
+        ) {
+
+            const attributes = [
+                "src",
+                "href",
+                "poster",
+                "action"
+            ];
+
+
+            for (
+                const attribute
+                of attributes
             ) {
 
-              await loadGame(
-                win,
-                url
-              );
+                const elements =
+                    doc.querySelectorAll(
+                        "[" + attribute + "]"
+                    );
 
-            } else {
 
-              /*
-               * Normal site page.
-               */
-              await loadPage(
-                win,
-                url,
-                getDirectory(url)
-              );
+                for (
+                    const element
+                    of elements
+                ) {
+
+                    const value =
+                        element.getAttribute(
+                            attribute
+                        );
+
+
+                    if (!value) {
+                        continue;
+                    }
+
+
+                    /*
+                     * Leave special URLs alone.
+                     */
+                    if (
+                        value.startsWith("data:") ||
+                        value.startsWith("blob:") ||
+                        value.startsWith("javascript:") ||
+                        value.startsWith("mailto:") ||
+                        value.startsWith("tel:") ||
+                        value.startsWith("#") ||
+                        /^[a-z][a-z0-9+.-]*:/i.test(value)
+                    ) {
+                        continue;
+                    }
+
+
+                    try {
+
+                        const absolute =
+                            new URL(
+                                value,
+                                baseURL
+                            ).href;
+
+
+                        element.setAttribute(
+                            attribute,
+                            absolute
+                        );
+
+                    } catch (error) {
+
+                        console.warn(
+                            "Could not resolve:",
+                            value
+                        );
+                    }
+                }
+            }
+        }
+
+
+        /*
+         * ============================================================
+         * FIX INTERNAL LINKS
+         * ============================================================
+         *
+         * Example:
+         *
+         * ../../../index.html?tab=games
+         *
+         * becomes a virtual navigation target.
+         */
+
+        function fixInternalLinks(
+            doc,
+            baseURL
+        ) {
+
+            const links =
+                doc.querySelectorAll(
+                    "a[href]"
+                );
+
+
+            for (
+                const link
+                of links
+            ) {
+
+                const href =
+                    link.getAttribute(
+                        "href"
+                    );
+
+
+                if (!href) {
+                    continue;
+                }
+
+
+                /*
+                 * Leave anchors and special links alone.
+                 */
+                if (
+                    href.startsWith("#") ||
+                    href.startsWith("javascript:") ||
+                    href.startsWith("mailto:") ||
+                    href.startsWith("tel:")
+                ) {
+                    continue;
+                }
+
+
+                let absoluteURL;
+
+
+                try {
+
+                    absoluteURL =
+                        new URL(
+                            href,
+                            baseURL
+                        ).href;
+
+                } catch (error) {
+
+                    continue;
+                }
+
+
+                /*
+                 * Only intercept our own CDN pages.
+                 */
+                if (
+                    !absoluteURL.startsWith(REPO)
+                ) {
+                    continue;
+                }
+
+
+                /*
+                 * Store the destination.
+                 */
+                link.dataset.virtualUrl =
+                    absoluteURL;
+
+
+                /*
+                 * Remove href so clicking it
+                 * cannot navigate away from
+                 * about:blank.
+                 */
+                link.removeAttribute(
+                    "href"
+                );
+
+
+                link.style.cursor =
+                    "pointer";
+            }
+        }
+
+
+        /*
+         * ============================================================
+         * NAVIGATION API
+         * ============================================================
+         *
+         * Makes these available to pages:
+         *
+         * virtualNavigate(...)
+         * virtualGame(...)
+         */
+
+        function injectNavigationAPI(
+            doc
+        ) {
+
+            const script =
+                doc.createElement("script");
+
+
+            script.textContent = `
+                window.__CXZ_REPO__ =
+                    ${JSON.stringify(REPO)};
+
+                window.__CXZ_GAME_BASE__ =
+                    ${JSON.stringify(GAME_BASE)};
+
+                window.virtualNavigate =
+                    function(url) {
+
+                        if (
+                            typeof window.__CXZ_NAVIGATE__ ===
+                            "function"
+                        ) {
+                            window.__CXZ_NAVIGATE__(url);
+                        }
+                    };
+
+                window.virtualGame =
+                    function(game) {
+
+                        if (
+                            typeof window.__CXZ_GAME__
+                            === "function"
+                        ) {
+                            window.__CXZ_GAME__(game);
+                        }
+                    };
+            `;
+
+
+            /*
+             * Put it at the beginning of head.
+             */
+            if (doc.head) {
+
+                doc.head.prepend(
+                    script
+                );
+            }
+        }
+
+
+        /*
+         * ============================================================
+         * INSTALL NAVIGATION
+         * ============================================================
+         */
+
+        function installNavigation(
+            win
+        ) {
+
+            const doc =
+                win.document;
+
+
+            /*
+             * Make navigation functions available
+             * to the page's own JavaScript.
+             */
+            win.__CXZ_NAVIGATE__ =
+                async function(url) {
+
+                    try {
+
+                        if (
+                            url.startsWith(
+                                GAME_BASE
+                            )
+                        ) {
+
+                            await loadGame(
+                                win,
+                                url
+                            );
+
+                        } else {
+
+                            await loadVirtualPage(
+                                win,
+                                url,
+                                getDirectory(url)
+                            );
+                        }
+
+                    } catch (error) {
+
+                        showError(
+                            win,
+                            error
+                        );
+                    }
+                };
+
+
+            win.__CXZ_GAME__ =
+                async function(game) {
+
+                    const url =
+                        GAME_BASE +
+                        game;
+
+                    await loadGame(
+                        win,
+                        url
+                    );
+                };
+
+
+            /*
+             * Prevent duplicate click handlers.
+             */
+            if (
+                doc.documentElement.dataset
+                    .cxzNavigationInstalled === "true"
+            ) {
+                return;
             }
 
-          } catch (error) {
 
-            showError(
-              win,
-              error
+            doc.documentElement.dataset
+                .cxzNavigationInstalled =
+                "true";
+
+
+            /*
+             * Intercept clicks on virtual links.
+             */
+            doc.addEventListener(
+                "click",
+                function(event) {
+
+                    const link =
+                        event.target.closest(
+                            "[data-virtual-url]"
+                        );
+
+
+                    if (!link) {
+                        return;
+                    }
+
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+
+                    const url =
+                        link.dataset.virtualUrl;
+
+
+                    if (!url) {
+                        return;
+                    }
+
+
+                    win.__CXZ_NAVIGATE__(
+                        url
+                    );
+
+                },
+                true
             );
-          }
-
-        },
-        true
-      );
-    }
+        }
 
 
-    /*
-     * ============================================================
-     * GET DIRECTORY
-     * ============================================================
-     */
+        /*
+         * ============================================================
+         * LOAD GAME
+         * ============================================================
+         *
+         * This is the important part for player.html.
+         *
+         * If player.html does:
+         *
+         * iframe.src = "gd.html"
+         *
+         * the <base> element makes it become:
+         *
+         * .../g/games/html/gd.html
+         */
 
-    function getDirectory(
-      url
-    ) {
+        async function loadGame(
+            win,
+            url
+        ) {
 
-      const lastSlash =
-        url.lastIndexOf("/");
-
-
-      if (
-        lastSlash === -1
-      ) {
-        return REPO;
-      }
-
-
-      return url.substring(
-        0,
-        lastSlash + 1
-      );
-    }
+            const response =
+                await fetch(url);
 
 
-    /*
-     * ============================================================
-     * ERROR PAGE
-     * ============================================================
-     */
+            if (!response.ok) {
 
-    function showError(
-      win,
-      error
-    ) {
-
-      const message =
-        String(
-          error &&
-          error.message
-            ? error.message
-            : error
-        );
-
-
-      win.document.open();
-
-      win.document.write(`
-        <!DOCTYPE html>
-
-        <html>
-
-        <head>
-          <title>Error</title>
-
-          <style>
-            body {
-              margin: 0;
-              padding: 40px;
-              background: #080808;
-              color: white;
-              font-family: Arial, sans-serif;
+                throw new Error(
+                    "Failed to fetch game:\n" +
+                    url +
+                    "\n\nHTTP " +
+                    response.status
+                );
             }
 
-            h1 {
-              color: #ef4444;
+
+            const html =
+                await response.text();
+
+
+            /*
+             * Parse game HTML.
+             */
+            const parser =
+                new DOMParser();
+
+            const doc =
+                parser.parseFromString(
+                    html,
+                    "text/html"
+                );
+
+
+            /*
+             * Game-relative resources use
+             * the game directory.
+             */
+            setBaseURL(
+                doc,
+                GAME_BASE
+            );
+
+
+            /*
+             * Fix game CSS, JS, images, etc.
+             */
+            fixResources(
+                doc,
+                GAME_BASE
+            );
+
+
+            /*
+             * Process internal links.
+             */
+            fixInternalLinks(
+                doc,
+                GAME_BASE
+            );
+
+
+            /*
+             * Add virtual navigation API.
+             */
+            injectNavigationAPI(
+                doc
+            );
+
+
+            /*
+             * Put the game/page into the SAME
+             * about:blank tab.
+             */
+            win.document.open();
+
+            win.document.write(
+                "<!DOCTYPE html>\n" +
+                doc.documentElement.outerHTML
+            );
+
+            win.document.close();
+
+
+            /*
+             * Reinstall navigation.
+             */
+            installNavigation(
+                win
+            );
+
+
+            if (doc.title) {
+                win.document.title =
+                    doc.title;
+            }
+        }
+
+
+        /*
+         * ============================================================
+         * GET DIRECTORY
+         * ============================================================
+         */
+
+        function getDirectory(
+            url
+        ) {
+
+            const index =
+                url.lastIndexOf("/");
+
+
+            if (index === -1) {
+                return REPO;
             }
 
-            pre {
-              white-space: pre-wrap;
-              background: #151515;
-              padding: 15px;
-              border-radius: 8px;
-            }
-          </style>
-        </head>
 
-        <body>
-
-          <h1>
-            Unable to load page
-          </h1>
-
-          <pre>${escapeHTML(message)}</pre>
-
-        </body>
-
-        </html>
-      `);
-
-      win.document.close();
-    }
+            return url.substring(
+                0,
+                index + 1
+            );
+        }
 
 
-    /*
-     * ============================================================
-     * ESCAPE ERROR TEXT
-     * ============================================================
-     */
+        /*
+         * ============================================================
+         * ERROR PAGE
+         * ============================================================
+         */
 
-    function escapeHTML(
-      text
-    ) {
+        function showError(
+            win,
+            error
+        ) {
 
-      return String(text)
-        .replace(
-          /&/g,
-          "&amp;"
-        )
-        .replace(
-          /</g,
-          "&lt;"
-        )
-        .replace(
-          />/g,
-          "&gt;"
-        )
-        .replace(
-          /"/g,
-          "&quot;"
-        )
-        .replace(
-          /'/g,
-          "&#039;"
-        );
-    }
-  </script>
+            const message =
+                error &&
+                error.message
+                    ? error.message
+                    : String(error);
+
+
+            win.document.open();
+
+            win.document.write(`
+                <!DOCTYPE html>
+
+                <html>
+
+                <head>
+                    <title>Loading Error</title>
+
+                    <style>
+                        body {
+                            margin: 0;
+                            padding: 40px;
+                            background: #080808;
+                            color: white;
+                            font-family: Arial, sans-serif;
+                        }
+
+                        h1 {
+                            color: #ff4444;
+                        }
+
+                        pre {
+                            background: #151515;
+                            border: 1px solid #333;
+                            border-radius: 8px;
+                            padding: 15px;
+                            white-space: pre-wrap;
+                            overflow-wrap: anywhere;
+                        }
+                    </style>
+                </head>
+
+                <body>
+
+                    <h1>
+                        Unable to load page
+                    </h1>
+
+                    <pre>${escapeHTML(message)}</pre>
+
+                </body>
+
+                </html>
+            `);
+
+            win.document.close();
+        }
+
+
+        /*
+         * ============================================================
+         * ESCAPE HTML
+         * ============================================================
+         */
+
+        function escapeHTML(
+            value
+        ) {
+
+            return String(value)
+                .replace(
+                    /&/g,
+                    "&amp;"
+                )
+                .replace(
+                    /</g,
+                    "&lt;"
+                )
+                .replace(
+                    />/g,
+                    "&gt;"
+                )
+                .replace(
+                    /"/g,
+                    "&quot;"
+                )
+                .replace(
+                    /'/g,
+                    "&#039;"
+                );
+        }
+    </script>
 
 </body>
 </html>
