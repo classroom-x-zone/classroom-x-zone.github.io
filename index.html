@@ -1077,28 +1077,104 @@
         </div>
 
         <div class="cxz-toolbar">
-            <div class="cxz-tool-group">
-                <button class="cxz-tool" onclick="CXZPlayer.openBlank()" title="About:Blank">▣</button>
-                <button class="cxz-tool" onclick="CXZPlayer.openNewTab()" title="Open in New Tab">↗</button>
-                <div class="cxz-volume">
-                    🔊
-                    <input id="cxz-volume-slider" type="range" min="0" max="100" value="100">
-                    <span id="cxz-volume-text">100%</span>
-                </div>
-            </div>
 
-            <div class="cxz-title" id="cxz-game-title">Game Title</div>
+    <div class="cxz-tool-group">
 
-            <div class="cxz-tool-group">
-                <button class="cxz-tool" onclick="CXZPlayer.toggleConsole()" title="Console">&gt;_</button>
-                <button class="cxz-tool" onclick="CXZPlayer.reload()" title="Reload">↻</button>
-                <button class="cxz-tool" onclick="CXZPlayer.download()" title="Download">↓</button>
-                <button class="cxz-tool" onclick="CXZPlayer.fullscreen()" title="Fullscreen">⛶</button>
-                <button class="cxz-tool" onclick="CXZPlayer.close()" title="Close">×</button>
-            </div>
+        <button
+            class="cxz-tool"
+            onclick="CXZPlayer.openBlank()"
+            title="Open in About:Blank">
+
+            <i data-lucide="external-link"></i>
+
+        </button>
+
+        <button
+            class="cxz-tool"
+            onclick="CXZPlayer.openNewTab()"
+            title="Open Game in New Tab">
+
+            <i data-lucide="square-arrow-out-up-right"></i>
+
+        </button>
+
+        <div class="cxz-volume">
+
+            <i data-lucide="volume-2"></i>
+
+            <input
+                id="cxz-volume-slider"
+                type="range"
+                min="0"
+                max="100"
+                value="100"
+            >
+
+            <span id="cxz-volume-text">
+                100%
+            </span>
+
         </div>
+
     </div>
 
+    <div
+        class="cxz-title"
+        id="cxz-game-title"
+    >
+        Game Title
+    </div>
+
+    <div class="cxz-tool-group">
+
+        <button
+            class="cxz-tool"
+            onclick="CXZPlayer.toggleConsole()"
+            title="Console">
+
+            <i data-lucide="terminal"></i>
+
+        </button>
+
+        <button
+            class="cxz-tool"
+            onclick="CXZPlayer.reload()"
+            title="Reload">
+
+            <i data-lucide="rotate-cw"></i>
+
+        </button>
+
+        <button
+            class="cxz-tool"
+            onclick="CXZPlayer.download()"
+            title="Download Game HTML">
+
+            <i data-lucide="download"></i>
+
+        </button>
+
+        <button
+            class="cxz-tool"
+            onclick="CXZPlayer.fullscreen()"
+            title="Fullscreen">
+
+            <i data-lucide="maximize"></i>
+
+        </button>
+
+        <button
+            class="cxz-tool"
+            onclick="CXZPlayer.close()"
+            title="Close">
+
+            <i data-lucide="x"></i>
+
+        </button>
+
+    </div>
+
+</div>
     <div class="cxz-console" id="cxz-console">
         <div style="display:flex;justify-content:space-between;color:var(--accent-color)">
             <span>Console Log</span>
