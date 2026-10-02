@@ -3,23 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Classroom-X-Zone</title>
 
     <style>
-        * {
-            box-sizing: border-box;
-        }
-
         html,
         body {
             margin: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden;
             background: #080808;
             color: white;
             font-family: Arial, sans-serif;
+            overflow: hidden;
         }
 
         #loading {
@@ -30,12 +25,11 @@
             align-items: center;
             justify-content: center;
             background: #080808;
-            z-index: 9999;
         }
 
         .logo {
             font-size: 28px;
-            font-weight: 800;
+            font-weight: bold;
             letter-spacing: 2px;
             margin-bottom: 25px;
         }
@@ -47,25 +41,25 @@
         .loader {
             width: 220px;
             height: 5px;
-            overflow: hidden;
-            border-radius: 10px;
             background: #222;
+            border-radius: 10px;
+            overflow: hidden;
         }
 
-        .loader-bar {
+        .bar {
             width: 0%;
             height: 100%;
             background: #ff6600;
             box-shadow: 0 0 12px #ff6600;
-            animation: loading 1.5s ease-in-out forwards;
+            animation: load 1.5s ease forwards;
         }
 
-        @keyframes loading {
-            0% {
+        @keyframes load {
+            from {
                 width: 0%;
             }
 
-            100% {
+            to {
                 width: 100%;
             }
         }
@@ -86,108 +80,97 @@
         </div>
 
         <div class="loader">
-            <div class="loader-bar"></div>
+            <div class="bar"></div>
         </div>
 
         <div class="status" id="status">
-            Starting...
+            Opening portal...
         </div>
     </div>
 
     <script>
-        (() => {
-            /* =========================================================
-               CONFIG
-            ========================================================= */
+        const MAIN_URL =
+            "https://cdn.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/index.html";
 
-            const MAIN_URL =
-                "https://cdn.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/index.html";
+        const status =
+            document.getElementById("status");
 
-            const status = document.getElementById("status");
+        function setStatus(text) {
+            status.textContent = text;
+        }
 
-            function setStatus(text) {
-                status.textContent = text;
-            }
+        /*
+         * Open the blank tab IMMEDIATELY.
+         * This prevents popup blockers from stopping it
+         * while the site is being fetched.
+         */
+        const portal =
+            window.open("about:blank", "_blank");
 
-            /* =========================================================
-               CREATE ABOUT:BLANK TAB
-            ========================================================= */
-
-            const appWindow = window.open(
-                "about:blank",
-                "_blank"
+        if (!portal) {
+            setStatus(
+                "Popup blocked. Allow popups and try again."
             );
+        } else {
+            loadPortal();
+        }
 
-            if (!appWindow) {
+        async function loadPortal() {
+            try {
                 setStatus(
-                    "Popup blocked. Allow popups and try again."
+                    "Downloading portal..."
                 );
 
-                throw new Error("Popup blocked");
-            }
+                const response =
+                    await fetch(MAIN_URL, {
+                        cache: "no-store"
+                    });
 
-            /* =========================================================
-               FETCH MAIN SITE
-            ========================================================= */
+                if (!response.ok) {
+                    throw new Error(
+                        "HTTP " + response.status
+                    );
+                }
 
-            async function launch() {
-                try {
-                    setStatus(
-                        "Loading Classroom-X-Zone..."
+                let html =
+                    await response.text();
+
+                setStatus(
+                    "Preparing portal..."
+                );
+
+                /*
+                 * Directory containing index.html.
+                 */
+                const BASE_URL =
+                    MAIN_URL.substring(
+                        0,
+                        MAIN_URL.lastIndexOf("/") + 1
                     );
 
-                    const response = await fetch(
-                        MAIN_URL,
-                        {
-                            cache: "no-store"
-                        }
-                    );
+                /*
+                 * Make relative URLs work.
+                 *
+                 * Example:
+                 *
+                 * ./images/logo.png
+                 *
+                 * becomes:
+                 *
+                 * https://cdn.jsdelivr.net/.../images/logo.png
+                 */
+                html = html.replace(
+                    /<head([^>]*)>/i,
+                    `<head$1>
+                        <base href="${BASE_URL}">
+                    `
+                );
 
-                    if (!response.ok) {
-                        throw new Error(
-                            "HTTP " + response.status
-                        );
-                    }
-
-                    let html = await response.text();
-
-                    setStatus(
-                        "Preparing portal..."
-                    );
-
-                    /* =================================================
-                       SET BASE URL
-                    ================================================= */
-
-                    const baseURL =
-                        MAIN_URL.substring(
-                            0,
-                            MAIN_URL.lastIndexOf("/") + 1
-                        );
-
-                    /*
-                     * Add a <base> tag so relative resources
-                     * continue working inside about:blank.
-                     */
-
-                    if (/<head[^>]*>/i.test(html)) {
-                        html = html.replace(
-                            /<head([^>]*)>/i,
-                            `<head$1>
-<base href="${baseURL}">
-`
-                        );
-                    } else {
-                        html =
-                            `<base href="${baseURL}">` +
-                            html;
-                    }
-
-                    /* =================================================
-                       LAUNCHER INFORMATION
-                    ================================================= */
-
-                    const launcherScript = `
+                /*
+                 * Tell the site that it was launched
+                 * through the Classroom-X-Zone launcher.
+                 */
+                const launcherInfo = `
 <script>
     window.__CXZ_LAUNCHED__ = true;
 
@@ -196,333 +179,140 @@
 <\/script>
 `;
 
-                    html = html.replace(
-                        /<\/head>/i,
-                        launcherScript + "</head>"
-                    );
-
-                    /* =================================================
-                       INTERNAL NAVIGATION ROUTER
-                    ================================================= */
-
-                    const router = `
-<script>
-(() => {
-    const SOURCE_BASE =
-        ${JSON.stringify(baseURL)};
-
-    function resolve(url) {
-        try {
-            return new URL(
-                url,
-                SOURCE_BASE
-            ).href;
-        } catch {
-            return url;
-        }
-    }
-
-    function isInternal(url) {
-        try {
-            const u = new URL(
-                url,
-                SOURCE_BASE
-            );
-
-            return (
-                u.origin ===
-                    new URL(SOURCE_BASE).origin ||
-                u.href.startsWith(SOURCE_BASE)
-            );
-
-        } catch {
-            return false;
-        }
-    }
-
-    async function loadPage(url) {
-        const absoluteURL = resolve(url);
-
-        try {
-            const response = await fetch(
-                absoluteURL,
-                {
-                    cache: "no-store"
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error(
-                    "HTTP " + response.status
-                );
-            }
-
-            let page =
-                await response.text();
-
-            const pageBase =
-                absoluteURL.substring(
-                    0,
-                    absoluteURL.lastIndexOf("/") + 1
+                html = html.replace(
+                    /<\/head>/i,
+                    launcherInfo + "</head>"
                 );
 
-            /*
-             * Remove any existing base tags.
-             */
+                /*
+                 * Write the site into about:blank.
+                 */
+                portal.document.open();
 
-            page = page.replace(
-                /<base[^>]*>/gi,
-                ""
-            );
-
-            /*
-             * Add the correct base URL.
-             */
-
-            if (/<head[^>]*>/i.test(page)) {
-                page = page.replace(
-                    /<head([^>]*)>/i,
-                    `<head$1>
-<base href="${pageBase}">
-`
+                portal.document.write(
+                    html
                 );
-            } else {
-                page =
-                    `<base href="${pageBase}">` +
-                    page;
-            }
 
-            /*
-             * Replace the current document.
-             */
+                portal.document.close();
 
-            document.open();
-            document.write(page);
-            document.close();
+                setStatus(
+                    "Portal loaded!"
+                );
 
-        } catch (error) {
-            document.body.innerHTML = `
-                <div style="
-                    width: 100%;
-                    height: 100vh;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    background: #080808;
-                    color: white;
-                    font-family: Arial;
-                    text-align: center;
-                ">
-                    <div>
-                        <h2>
-                            Unable to load page
-                        </h2>
+                /*
+                 * Close the launcher page.
+                 */
+                setTimeout(() => {
+                    window.close();
+                }, 300);
 
-                        <p style="color: #888;">
-                            ${error.message}
-                        </p>
+            } catch (error) {
 
-                        <button
-                            onclick="location.reload()"
-                            style="
-                                padding: 10px 18px;
-                                border: 0;
-                                border-radius: 6px;
-                                background: #ff6600;
-                                color: #000;
-                                cursor: pointer;
-                            "
-                        >
-                            Retry
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-    }
+                console.error(
+                    "Launcher error:",
+                    error
+                );
 
-    /* =============================================================
-       INTERCEPT INTERNAL LINKS
-    ============================================================= */
+                setStatus(
+                    "Failed to load portal."
+                );
 
-    document.addEventListener(
-        "click",
-        event => {
-            const link =
-                event.target.closest("a");
+                /*
+                 * Show the error inside the
+                 * about:blank tab.
+                 */
+                try {
+                    portal.document.open();
 
-            if (!link) {
-                return;
-            }
-
-            const href =
-                link.getAttribute("href");
-
-            if (!href) {
-                return;
-            }
-
-            /*
-             * Leave anchors, mail links, telephone
-             * links, and javascript links alone.
-             */
-
-            if (
-                href.startsWith("#") ||
-                href.startsWith("mailto:") ||
-                href.startsWith("tel:") ||
-                href.startsWith("javascript:")
-            ) {
-                return;
-            }
-
-            const absolute =
-                resolve(href);
-
-            if (isInternal(absolute)) {
-                event.preventDefault();
-                event.stopPropagation();
-
-                loadPage(absolute);
-            }
-        },
-        true
-    );
-
-    /* =============================================================
-       INTERCEPT window.open()
-    ============================================================= */
-
-    const originalOpen =
-        window.open;
-
-    window.open = function(
-        url,
-        target,
-        features
-    ) {
-        if (url && isInternal(url)) {
-            loadPage(url);
-            return window;
-        }
-
-        return originalOpen.call(
-            window,
-            url,
-            target,
-            features
-        );
-    };
-
-})();
-<\/script>
-`;
-
-                    /* =================================================
-                       INSERT ROUTER
-                    ================================================= */
-
-                    html = html.replace(
-                        /<\/body>/i,
-                        router + "</body>"
-                    );
-
-                    /* =================================================
-                       WRITE INTO ABOUT:BLANK
-                    ================================================= */
-
-                    appWindow.document.open();
-
-                    appWindow.document.write(
-                        html
-                    );
-
-                    appWindow.document.close();
-
-                    setStatus(
-                        "Launching..."
-                    );
-
-                    /* =================================================
-                       CLOSE LAUNCHER PAGE
-                    ================================================= */
-
-                    setTimeout(() => {
-                        window.close();
-                    }, 500);
-
-                } catch (error) {
-                    setStatus(
-                        "Failed to load: " +
-                        error.message
-                    );
-
-                    try {
-                        appWindow.document.open();
-
-                        appWindow.document.write(`
+                    portal.document.write(`
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <title>Classroom-X-Zone</title>
+
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: #080808;
+            color: white;
+
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        .box {
+            max-width: 500px;
+        }
+
+        h1 {
+            color: #ff6600;
+        }
+
+        p {
+            color: #888;
+        }
+
+        button {
+            padding: 10px 20px;
+
+            border: none;
+            border-radius: 6px;
+
+            background: #ff6600;
+            color: #000;
+
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
 </head>
 
-<body style="
-    margin: 0;
-    background: #080808;
-    color: white;
-    font-family: Arial;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    text-align: center;
-">
+<body>
 
-    <div>
+    <div class="box">
+
         <h1>
             Classroom-X-Zone
         </h1>
 
-        <p style="color: #888;">
-            Failed to load the portal.
+        <p>
+            The portal could not be loaded.
         </p>
 
-        <p style="color: #666;">
+        <p>
             ${error.message}
         </p>
 
         <button
             onclick="location.reload()"
-            style="
-                padding: 10px 20px;
-                border: 0;
-                border-radius: 6px;
-                background: #ff6600;
-                color: #000;
-                cursor: pointer;
-            "
         >
             Retry
         </button>
+
     </div>
 
 </body>
+
 </html>
-                        `);
+                    `);
 
-                        appWindow.document.close();
+                    portal.document.close();
 
-                    } catch {
-                        // Nothing else to do.
-                    }
+                } catch (writeError) {
+                    console.error(
+                        writeError
+                    );
                 }
             }
-
-            launch();
-        })();
+        }
     </script>
 
 </body>
