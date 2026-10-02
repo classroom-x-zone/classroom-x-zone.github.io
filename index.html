@@ -1917,28 +1917,37 @@ setTimeout(function() {
     
 
 /* =========================================================
-   INTEGRATED GAME PLAYER SCRIPT
-========================================================= */
-const CXZ_GAME_BASE = 'https://cdn.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/g/games/html/';
+   INTEGRATED GAME PLAYER
+   ========================================================= */
+
+const CXZ_GAME_BASE =
+    'https://cdn.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/g/games/html/';
 
 const CXZPlayer = (() => {
+
     let currentGame = '';
     let currentTitle = '';
+    let currentHTML = '';
     let progressTimer = null;
     let progress = 0;
 
     const $ = id => document.getElementById(id);
 
     function absoluteGameURL(url) {
-        try { return new URL(url, CXZ_GAME_BASE).href; }
-        catch { return url; }
+        try {
+            return new URL(url, CXZ_GAME_BASE).href;
+        } catch {
+            return url;
+        }
     }
 
     function log(message) {
-        const out = $('cxz-console-output');
-        if (!out) return;
-        out.textContent += '\n' + message;
-        out.scrollTop = out.scrollHeight;
+        const output = $('cxz-console-output');
+
+        if (!output) return;
+
+        output.textContent += '\n' + message;
+        output.scrollTop = output.scrollHeight;
     }
 
     function showToast(message) {
@@ -1949,156 +1958,754 @@ const CXZPlayer = (() => {
 
     function resetLoader() {
         clearInterval(progressTimer);
+
         progress = 0;
-        $('cxz-progress').style.width = '0%';
-        $('cxz-loader').classList.remove('hidden');
+
+        const bar = $('cxz-progress');
+        const loader = $('cxz-loader');
+
+        if (bar) {
+            bar.style.width = '0%';
+        }
+
+        if (loader) {
+            loader.classList.remove('hidden');
+        }
     }
 
     function startLoader() {
         resetLoader();
+
         progressTimer = setInterval(() => {
+
             progress += Math.floor(Math.random() * 18) + 8;
-            if (progress > 100) progress = 100;
-            $('cxz-progress').style.width = progress + '%';
+
+            if (progress > 100) {
+                progress = 100;
+            }
+
+            const bar = $('cxz-progress');
+
+            if (bar) {
+                bar.style.width = progress + '%';
+            }
 
             if (progress >= 100) {
+
                 clearInterval(progressTimer);
+
                 setTimeout(() => {
-                    $('cxz-loader').classList.add('hidden');
-                    log('[Loaded] ' + currentTitle + ' loaded successfully.');
-                    showToast(currentTitle + ' loaded');
+
+                    const loader = $('cxz-loader');
+
+                    if (loader) {
+                        loader.classList.add('hidden');
+                    }
+
+                    log(
+                        '[Loaded] ' +
+                        currentTitle +
+                        ' loaded successfully.'
+                    );
+
+                    showToast(
+                        currentTitle +
+                        ' loaded'
+                    );
+
                 }, 250);
             }
+
         }, 80);
     }
 
-    function open(url, title) {
-        currentGame = absoluteGameURL(url);
-        currentTitle = title || 'Game';
+    /*
+     * Fetch the actual game file.
+     *
+     * currentGame = URL
+     * currentHTML = actual HTML returned by that URL
+     */
+    async function fetchGameHTML(url) {
 
-        $('cxz-game-title').textContent = currentTitle;
+        log('[Fetch] ' + url);
+
+        const response = await fetch(url, {
+            cache: 'no-store'
+        });
+
+        if (!response.ok) {
+            throw new Error(
+                'HTTP ' + response.status
+            );
+        }
+
+        const html = await response.text();
+
+        if (!html || !html.trim()) {
+            throw new Error(
+                'The game returned an empty HTML document.'
+            );
+        }
+
+        log(
+            '[Fetched] ' +
+            html.length.toLocaleString() +
+            ' characters'
+        );
+
+        return html;
+    }
+
+    /*
+     * IMPORTANT:
+     *
+     * The iframe receives the actual HTML using srcdoc.
+     *
+     * The CDN URL is NOT assigned to iframe.src.
+     */
+    function loadGameHTML(html) {
+
+        const frame = $('cxz-game-frame');
+
+        if (!frame) {
+            throw new Error(
+                'Game iframe was not found.'
+            );
+        }
+
+        frame.removeAttribute('src');
+
+        frame.srcdoc = html;
+    }
+
+    async function open(url, title) {
+
+        currentGame =
+            absoluteGameURL(url);
+
+        currentTitle =
+            title || 'Game';
+
+        currentHTML = '';
+
+        $('cxz-game-title').textContent =
+            currentTitle;
+
         $('cxz-player').classList.add('open');
-        $('cxz-player').setAttribute('aria-hidden', 'false');
-        document.body.style.overflow = 'hidden';
 
-        $('cxz-game-frame').src = 'about:blank';
+        $('cxz-player').setAttribute(
+            'aria-hidden',
+            'false'
+        );
+
+        document.body.style.overflow =
+            'hidden';
+
+        const frame =
+            $('cxz-game-frame');
+
+        frame.removeAttribute('src');
+
+        frame.srcdoc = '';
+
         startLoader();
 
-        setTimeout(() => {
-            $('cxz-game-frame').src = currentGame;
-        }, 50);
+        try {
+
+            /*
+             * Fetch the game's actual source first.
+             */
+            currentHTML =
+                await fetchGameHTML(
+                    currentGame
+                );
+
+            /*
+             * Put the HTML itself into
+             * the iframe.
+             */
+            loadGameHTML(
+                currentHTML
+            );
+
+        } catch (error) {
+
+            console.error(
+                'Game loading error:',
+                error
+            );
+
+            log(
+                '[Game Error] ' +
+                error.message
+            );
+
+            frame.srcdoc = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Game Error</title>
+
+<style>
+html,
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: #08080c;
+    color: #ff6600;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.box {
+    text-align: center;
+    padding: 30px;
+}
+
+h2 {
+    margin-bottom: 12px;
+}
+
+p {
+    color: #888;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+<h2>GAME FAILED TO LOAD</h2>
+
+<p>
+${String(error.message)
+    .replace(/[<>&"]/g, '')}
+</p>
+
+</div>
+
+</body>
+</html>
+`;
+
+            showToast(
+                'Game failed to load'
+            );
+        }
     }
 
     function close() {
-        clearInterval(progressTimer);
-        $('cxz-game-frame').src = 'about:blank';
-        $('cxz-player').classList.remove('open');
-        $('cxz-player').setAttribute('aria-hidden', 'true');
-        $('cxz-console').classList.remove('open');
-        document.body.style.overflow = '';
+
+        clearInterval(
+            progressTimer
+        );
+
+        const frame =
+            $('cxz-game-frame');
+
+        if (frame) {
+
+            frame.srcdoc = '';
+
+            frame.removeAttribute(
+                'src'
+            );
+        }
+
+        currentGame = '';
+        currentHTML = '';
+
+        $('cxz-player')
+            .classList
+            .remove('open');
+
+        $('cxz-player')
+            .setAttribute(
+                'aria-hidden',
+                'true'
+            );
+
+        $('cxz-console')
+            .classList
+            .remove('open');
+
+        document.body.style.overflow =
+            '';
     }
 
-    function reload() {
-        if (!currentGame) return;
-        $('cxz-game-frame').src = 'about:blank';
+    async function reload() {
+
+        if (!currentGame) {
+            return;
+        }
+
         startLoader();
-        setTimeout(() => {
-            $('cxz-game-frame').src = currentGame;
-        }, 150);
-        showToast(currentTitle + ' reloading');
+
+        const frame =
+            $('cxz-game-frame');
+
+        frame.srcdoc = '';
+
+        frame.removeAttribute(
+            'src'
+        );
+
+        try {
+
+            currentHTML =
+                await fetchGameHTML(
+                    currentGame
+                );
+
+            loadGameHTML(
+                currentHTML
+            );
+
+            showToast(
+                currentTitle +
+                ' reloaded'
+            );
+
+        } catch (error) {
+
+            log(
+                '[Reload Error] ' +
+                error.message
+            );
+
+            showToast(
+                'Reload failed'
+            );
+        }
     }
 
     function fullscreen() {
-        const frame = $('cxz-game-frame');
-        const win = $('cxz-game-window');
+
+        const win =
+            $('cxz-game-window');
+
         if (!document.fullscreenElement) {
-            (win.requestFullscreen || win.webkitRequestFullscreen).call(win);
+
+            const request =
+                win.requestFullscreen ||
+                win.webkitRequestFullscreen;
+
+            if (request) {
+                request.call(win);
+            }
+
         } else {
-            (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+
+            const exit =
+                document.exitFullscreen ||
+                document.webkitExitFullscreen;
+
+            if (exit) {
+                exit.call(document);
+            }
         }
     }
 
-    function openNewTab() {
-        if (!currentGame) return;
-        window.open(currentGame, '_blank', 'noopener');
-    }
-
+    /*
+     * Open the fetched GAME HTML inside
+     * an about:blank tab.
+     */
     function openBlank() {
-        if (!currentGame) return;
-        const win = window.open('about:blank', '_blank');
-        if (!win) {
-            alert('Pop-ups are blocked. Please allow pop-ups for this site.');
+
+        if (!currentHTML) {
+
+            showToast(
+                'Game is still loading'
+            );
+
             return;
         }
-        const doc = win.document;
+
+        const win =
+            window.open(
+                'about:blank',
+                '_blank'
+            );
+
+        if (!win) {
+
+            alert(
+                'Pop-ups are blocked. Please allow pop-ups for this site.'
+            );
+
+            return;
+        }
+
+        const safeTitle =
+            String(currentTitle)
+                .replace(
+                    /[<>&"]/g,
+                    ''
+                );
+
+        const doc =
+            win.document;
+
         doc.open();
-        doc.write('<!doctype html><html><head><title>' +
-            String(currentTitle).replace(/[<>&\"]/g, '') +
-            '</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}iframe{width:100%;height:100%;border:0}</style></head><body><iframe allowfullscreen src="' +
-            currentGame.replace(/&/g, '&amp;').replace(/"/g, '&quot;') +
-            '"></iframe></body></html>');
+
+        doc.write(`
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width,initial-scale=1.0"
+>
+
+<title>${safeTitle}</title>
+
+<style>
+
+html,
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+}
+
+iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<iframe
+    id="game"
+    allowfullscreen
+    allow="autoplay; fullscreen; gamepad; focus-without-user-activation *"
+></iframe>
+
+<script>
+
+const GAME_HTML =
+    ${JSON.stringify(currentHTML)};
+
+const FRAME =
+    document.getElementById('game');
+
+/*
+ * The iframe receives the GAME HTML.
+ *
+ * It does NOT receive the CDN URL.
+ */
+FRAME.srcdoc =
+    GAME_HTML;
+
+<\/script>
+
+</body>
+
+</html>
+`);
+
+        doc.close();
+
+        log(
+            '[About:Blank] Game HTML opened in new tab.'
+        );
+    }
+
+    /*
+     * Open the actual fetched HTML directly
+     * in an about:blank document.
+     */
+    function openNewTab() {
+
+        if (!currentHTML) {
+
+            showToast(
+                'Game is still loading'
+            );
+
+            return;
+        }
+
+        const win =
+            window.open(
+                'about:blank',
+                '_blank'
+            );
+
+        if (!win) {
+
+            alert(
+                'Pop-ups are blocked. Please allow pop-ups for this site.'
+            );
+
+            return;
+        }
+
+        const doc =
+            win.document;
+
+        doc.open();
+
+        doc.write(
+            currentHTML
+        );
+
         doc.close();
     }
 
     async function download() {
-        if (!currentGame) return;
-        showToast('Preparing download...');
+
+        if (!currentHTML) {
+
+            showToast(
+                'Game is still loading'
+            );
+
+            return;
+        }
+
         try {
-            const response = await fetch(currentGame);
-            if (!response.ok) throw new Error('HTTP ' + response.status);
-            const html = await response.text();
-            const blob = new Blob([html], {type:'text/html'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = currentGame.split('/').pop() || 'game.html';
-            document.body.appendChild(a);
+
+            const blob =
+                new Blob(
+                    [currentHTML],
+                    {
+                        type:
+                            'text/html'
+                    }
+                );
+
+            const blobURL =
+                URL.createObjectURL(
+                    blob
+                );
+
+            const a =
+                document.createElement(
+                    'a'
+                );
+
+            a.href =
+                blobURL;
+
+            a.download =
+                currentTitle
+                    .replace(
+                        /[^a-z0-9_-]/gi,
+                        '_'
+                    ) +
+                '.html';
+
+            document.body.appendChild(
+                a
+            );
+
             a.click();
+
             a.remove();
-            URL.revokeObjectURL(url);
-            showToast('Game downloaded');
-        } catch (e) {
-            log('[Download Error] ' + e.message);
-            alert('Could not fetch game file for download.');
+
+            setTimeout(() => {
+
+                URL.revokeObjectURL(
+                    blobURL
+                );
+
+            }, 1000);
+
+            showToast(
+                'Game downloaded'
+            );
+
+        } catch (error) {
+
+            console.error(error);
+
+            log(
+                '[Download Error] ' +
+                error.message
+            );
+
+            showToast(
+                'Download failed'
+            );
         }
     }
 
     function toggleConsole() {
-        $('cxz-console').classList.toggle('open');
+
+        $('cxz-console')
+            .classList
+            .toggle('open');
     }
 
-    $('cxz-volume-slider').addEventListener('input', e => {
-        $('cxz-volume-text').textContent = e.target.value + '%';
-        /* Browser iframes cannot have their media volume changed generically.
-           This control is retained for the player's original UI behavior. */
-    });
+    const volume =
+        $('cxz-volume-slider');
 
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && $('cxz-player').classList.contains('open') && !document.fullscreenElement) {
-            close();
+    if (volume) {
+
+        volume.addEventListener(
+            'input',
+            event => {
+
+                $('cxz-volume-text')
+                    .textContent =
+                    event.target.value +
+                    '%';
+
+            }
+        );
+    }
+
+    document.addEventListener(
+        'keydown',
+        event => {
+
+            if (
+                event.key === 'Escape' &&
+                $('cxz-player')
+                    .classList
+                    .contains('open') &&
+                !document.fullscreenElement
+            ) {
+
+                close();
+            }
+
         }
-    });
+    );
 
-    return { open, close, reload, fullscreen, openNewTab, openBlank, download, toggleConsole };
+    return {
+
+        open,
+        close,
+        reload,
+        fullscreen,
+        openNewTab,
+        openBlank,
+        download,
+        toggleConsole
+
+    };
+
 })();
 
-/* Intercept every existing/future game-player card. */
-document.addEventListener('click', event => {
-    const card = event.target.closest('a[href*="/g/games/html/player.html"]');
-    if (!card) return;
 
-    event.preventDefault();
-    event.stopPropagation();
+/* =========================================================
+   GAME CARD INTERCEPTOR
+   ========================================================= */
 
-    try {
-        const url = new URL(card.href, location.href);
-        const gameURL = url.searchParams.get('url');
-        const title = url.searchParams.get('title') || card.dataset.title || card.querySelector('h3')?.textContent || 'Game';
-        if (gameURL) CXZPlayer.open(gameURL, title);
-    } catch (e) {
-        console.error('Game player error:', e);
+document.addEventListener(
+    'click',
+    event => {
+
+        const card =
+            event.target.closest(
+                'a[href*="/g/games/html/player.html"]'
+            );
+
+        if (!card) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        try {
+
+            const url =
+                new URL(
+                    card.href,
+                    location.href
+                );
+
+            const gameURL =
+                url.searchParams.get(
+                    'url'
+                );
+
+            const title =
+                url.searchParams.get(
+                    'title'
+                ) ||
+                card.dataset.title ||
+                card.querySelector(
+                    'h3'
+                )?.textContent ||
+                'Game';
+
+            if (gameURL) {
+
+                CXZPlayer.open(
+                    gameURL,
+                    title
+                );
+            }
+
+        } catch (error) {
+
+            console.error(
+                'Game player error:',
+                error
+            );
+        }
+
+    },
+    true
+);
+
+
+/* =========================================================
+   LUCIDE PLAYER ICONS
+   ========================================================= */
+
+function refreshCXZIcons() {
+
+    if (
+        window.lucide &&
+        typeof window.lucide.createIcons ===
+            'function'
+    ) {
+
+        window.lucide.createIcons();
     }
-}, true);
+}
+
+if (
+    document.readyState ===
+    'loading'
+) {
+
+    document.addEventListener(
+        'DOMContentLoaded',
+        refreshCXZIcons
+    );
+
+} else {
+
+    refreshCXZIcons();
+}
+
 
 </script>
 </body>
