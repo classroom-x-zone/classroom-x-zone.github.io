@@ -3,7 +3,8 @@
   <foreignObject id="fo" width="1920" height="1080" x="0" y="0">
     <xhtml:html xmlns="http://www.w3.org/1999/xhtml" style="width:100%;height:100%;margin:0;padding:0;">
     <xhtml:head>
-      <xhtml:title>Classes</xhtml:title>
+      <xhtml:title>Home - Classroom</xhtml:title>
+      <xhtml:link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,AAABAAEAEBAAAAEACABoBQAAFgAAACgAAAAQAAAAIAAAAAEACAAAAAAAAAEAAAAAAAAAAAAAAAEAAAAAAAAAAAAAYqMdAAC8/wBanhIAAbT0AGSkIQBfoRkAWZ4RAP///wAJt/QAZKQgAF+hGAATuvUAFLr1AFyfFQAVuvUAY6QfAGGiHABbnxQAZqUjAAa29AAHtvQACLb0AGGiGwAQufUAErn1AFufEwBlpSIAYKIaAF2gFwBeoBcA9/f3AAK19AADtfQABLX0AAW19AAMuPUAYqMeAA249QAOuPUAXaAWAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAICCSMjFhUVIyMjIyMgAgICIyMjIyMjIyMjIyMjIwQCAiQGBwgICAgICAgIBwMgAiYCFwcICAgICAgICAcaIQInAhEHBwgfHx8fCAcHEiECAgIBBwcHBwcHBwcHBxIiAgIYJSUBBwcICAcHBygOIwICGRAQBwcICAgIBwcHDiMCAgwKChAlCB8fCAYeHSgUAgINGwUKEAcICAcGCx4oFAICDxMbBwcHBwcHHAseHRQCAiMjIyMjIyMjIyMjIyMUAgIjIyMjIyMjIyMjIyMjIwIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//8AAP//AAA=" />
       <xhtml:style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
@@ -17,57 +18,27 @@
         (function() {
           function size() {
             var w = window.innerWidth, h = window.innerHeight;
-            var svg = document.querySelector("svg");
-            var fo  = document.querySelector("foreignObject");
-            if (svg) { svg.setAttribute("width", w); svg.setAttribute("height", h); svg.setAttribute("viewBox","0 0 "+w+" "+h); }
-            if (fo)  { fo.setAttribute("width", w);  fo.setAttribute("height", h); }
+            var svg = document.querySelector('svg');
+            var fo  = document.querySelector('foreignObject');
+            if (svg) { svg.setAttribute('width', w); svg.setAttribute('height', h); svg.setAttribute('viewBox','0 0 '+w+' '+h); }
+            if (fo)  { fo.setAttribute('width', w);  fo.setAttribute('height', h); }
           }
           size();
-          window.addEventListener("resize", size);
-
-          var mirrors = [
-            "https://cdn.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/index.html",
-            "https://quantil.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/index.html",
-            "https://gcore.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/index.html",
-            "https://fastly.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/index.html",
-            "https://testingcf.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/index.html",
-            "https://jsdelivr.b-cdn.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/index.html",
-            "https://jsd.onmicrosoft.cn/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/index.html",
-            "https://cdn.jsdmirror.com/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/index.html",
-            "https://cdn.statically.io/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/index.html",
-            "https://raw.githubusercontent.com/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd/main/index.html",
-            "./index.html",
-            "index.html",
-            "https://quantil.jsdelivr.net/gh/s0n-1m-cr1n3/sc13nc3/assets/index.html",
-            "https://gcore.jsdelivr.net/gh/s0n-1m-cr1n3/sc13nc3/assets/index.html"
-          ];
-
-          var modalHtml = '<div id="cxz-downloaded-modal" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#0c0c14;border:2px solid #ff6600;box-shadow:0 0 20px rgba(255,102,0,0.6);color:#ff6600;padding:12px 20px;border-radius:8px;font-family:\'Press Start 2P\',Courier,monospace,sans-serif;font-size:12px;z-index:99999999;display:flex;align-items:center;gap:14px;box-sizing:border-box;animation:cxzSlideDown 0.4s ease-out;user-select:none;">' +
-            '<span>Downloaded from Classroom-X-Zone</span>' +
-            '<button onclick="document.getElementById(\'cxz-downloaded-modal\').remove()" style="background:none;border:1px solid #ff6600;color:#ff6600;padding:4px 8px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:11px;line-height:1;">✕</button>' +
-            '</div>' +
-            '<style>@keyframes cxzSlideDown{from{opacity:0;transform:translate(-50%,-30px);}to{opacity:1;transform:translate(-50%,0);}}</style>' +
-            '<script>setTimeout(function(){var el=document.getElementById("cxz-downloaded-modal");if(el){el.style.transition="opacity 0.6s ease, transform 0.6s ease";el.style.opacity="0";el.style.transform="translate(-50%,-20px)";setTimeout(function(){if(el)el.remove();},600);}},4500);<\/script>';
-
-          (function load(i) {
-            if (i >= mirrors.length) { console.error("All mirrors failed"); return; }
-            fetch(mirrors[i] + "?t=" + Date.now()).then(function(res){ if (!res.ok) return Promise.reject(); return res.text(); })
-              .then(function(text){
-                var frame = document.getElementById("fm");
-                var fdoc = frame.contentDocument || frame.contentWindow.document;
-                
-                // Inject Downloaded from Classroom-X-Zone modal
-                if (text.indexOf('</body>') >= 0) {
-                  text = text.replace('</body>', modalHtml + '\n</body>');
-                } else {
-                  text = text + modalHtml;
-                }
-
-                fdoc.open();
-                fdoc.write(text);
-                fdoc.close();
-              }).catch(function(){ load(i + 1); });
-          })(0);
+          window.addEventListener('resize', size);
+          (async () => {
+            try {
+              const url = 'https://quantil.jsdelivr.net/gh/s0n-1m-cr1n3/sc13nc3/assets/index.html?t=' + Date.now();
+              const res = await fetch(url);
+              const text = await res.text();
+              const frame = document.getElementById('fm');
+              const fdoc = frame.contentDocument || frame.contentWindow.document;
+              fdoc.open();
+              fdoc.write(text);
+              fdoc.close();
+            } catch(e) {
+              console.error('Loader error:', e);
+            }
+          })();
         })();
       //]]>
       </xhtml:script>
