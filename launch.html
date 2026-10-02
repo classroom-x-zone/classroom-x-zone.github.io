@@ -2,797 +2,528 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Classroom-X-Zone</title>
+
     <style>
-        html, body {
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
             margin: 0;
             width: 100%;
             height: 100%;
-            background: #000;
+            overflow: hidden;
+            background: #080808;
             color: white;
             font-family: Arial, sans-serif;
-            overflow: hidden;
         }
 
-        #launch {
+        #loading {
             position: fixed;
             inset: 0;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: #050505;
-            z-index: 999999;
+            background: #080808;
+            z-index: 9999;
         }
 
-        #launch button {
-            border: 0;
-            border-radius: 12px;
-            padding: 16px 28px;
-            font-size: 17px;
-            font-weight: bold;
-            cursor: pointer;
-            background: #fff;
-            color: #000;
+        .logo {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin-bottom: 25px;
+        }
+
+        .logo span {
+            color: #ff6600;
+        }
+
+        .loader {
+            width: 220px;
+            height: 5px;
+            overflow: hidden;
+            border-radius: 10px;
+            background: #222;
+        }
+
+        .loader-bar {
+            width: 0%;
+            height: 100%;
+            background: #ff6600;
+            box-shadow: 0 0 12px #ff6600;
+            animation: loading 1.5s ease-in-out forwards;
+        }
+
+        @keyframes loading {
+            0% {
+                width: 0%;
+            }
+
+            100% {
+                width: 100%;
+            }
+        }
+
+        .status {
+            margin-top: 15px;
+            color: #888;
+            font-size: 13px;
         }
     </style>
 </head>
 
 <body>
 
-<div id="launch">
-    <button onclick="openClassroom()">Open Classroom-X-Zone</button>
-</div>
+    <div id="loading">
+        <div class="logo">
+            CLASSROOM<span>-X</span>-ZONE
+        </div>
 
-<script>
-const REPO =
-    "https://cdn.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/";
+        <div class="loader">
+            <div class="loader-bar"></div>
+        </div>
 
-const SITE_URL = REPO + "index.html";
-const GAME_BASE = REPO + "g/games/html/";
+        <div class="status" id="status">
+            Starting...
+        </div>
+    </div>
 
+    <script>
+        (() => {
+            /* =========================================================
+               CONFIG
+            ========================================================= */
 
-/* =========================================================
-   ESCAPE
-========================================================= */
+            const MAIN_URL =
+                "https://cdn.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/index.html";
 
-function escapeHTML(value) {
-    return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
+            const status = document.getElementById("status");
 
-
-/* =========================================================
-   MAKE A URL ABSOLUTE
-========================================================= */
-
-function absoluteURL(value, base) {
-    if (!value) return value;
-
-    value = value.trim();
-
-    if (
-        value.startsWith("#") ||
-        value.startsWith("data:") ||
-        value.startsWith("blob:") ||
-        value.startsWith("javascript:") ||
-        value.startsWith("mailto:") ||
-        value.startsWith("tel:")
-    ) {
-        return value;
-    }
-
-    try {
-        return new URL(value, base).href;
-    } catch {
-        return value;
-    }
-}
-
-
-/* =========================================================
-   GET THE VIRTUAL QUERY STRING
-========================================================= */
-
-function getVirtualSearch(url) {
-    try {
-        return new URL(url, REPO).search || "";
-    } catch {
-        return "";
-    }
-}
-
-
-/* =========================================================
-   GET THE VIRTUAL DIRECTORY
-========================================================= */
-
-function getDirectory(url) {
-    try {
-        const u = new URL(url, REPO);
-        u.pathname = u.pathname.substring(
-            0,
-            u.pathname.lastIndexOf("/") + 1
-        );
-        u.search = "";
-        u.hash = "";
-        return u.href;
-    } catch {
-        return REPO;
-    }
-}
-
-
-/* =========================================================
-   REWRITE LOCATION SEARCH
-   THIS IS THE IMPORTANT FIX
-========================================================= */
-
-function rewriteQueryAccess(html) {
-
-    /*
-        The real about:blank page has:
-
-            location.search === ""
-
-        So we replace the site's query lookups with:
-
-            window.__CXZ_SEARCH__
-
-        which contains the query from the virtual URL.
-    */
-
-    html = html.replace(
-        /\bwindow\.location\.search\b/g,
-        "window.__CXZ_SEARCH__"
-    );
-
-    html = html.replace(
-        /\blocation\.search\b/g,
-        "window.__CXZ_SEARCH__"
-    );
-
-    return html;
-}
-
-
-/* =========================================================
-   REWRITE INTERNAL LOCATION NAVIGATION
-========================================================= */
-
-function rewriteInternalLocationNavigation(html) {
-
-    /*
-        player.html contains:
-
-            window.location.href = '../../../index.html';
-
-        That would navigate the actual about:blank page.
-
-        Replace internal index navigation with our virtual router.
-    */
-
-    html = html.replace(
-        /window\.location\.href\s*=\s*(['"`])([^'"`]+)\1/g,
-        function(match, quote, url) {
-
-            if (
-                url.startsWith("http://") ||
-                url.startsWith("https://") ||
-                url.startsWith("//")
-            ) {
-                return match;
+            function setStatus(text) {
+                status.textContent = text;
             }
 
-            return "__CXZ_NAVIGATE__(" + JSON.stringify(url) + ")";
+            /* =========================================================
+               CREATE ABOUT:BLANK TAB
+            ========================================================= */
+
+            const appWindow = window.open(
+                "about:blank",
+                "_blank"
+            );
+
+            if (!appWindow) {
+                setStatus(
+                    "Popup blocked. Allow popups and try again."
+                );
+
+                throw new Error("Popup blocked");
+            }
+
+            /* =========================================================
+               FETCH MAIN SITE
+            ========================================================= */
+
+            async function launch() {
+                try {
+                    setStatus(
+                        "Loading Classroom-X-Zone..."
+                    );
+
+                    const response = await fetch(
+                        MAIN_URL,
+                        {
+                            cache: "no-store"
+                        }
+                    );
+
+                    if (!response.ok) {
+                        throw new Error(
+                            "HTTP " + response.status
+                        );
+                    }
+
+                    let html = await response.text();
+
+                    setStatus(
+                        "Preparing portal..."
+                    );
+
+                    /* =================================================
+                       SET BASE URL
+                    ================================================= */
+
+                    const baseURL =
+                        MAIN_URL.substring(
+                            0,
+                            MAIN_URL.lastIndexOf("/") + 1
+                        );
+
+                    /*
+                     * Add a <base> tag so relative resources
+                     * continue working inside about:blank.
+                     */
+
+                    if (/<head[^>]*>/i.test(html)) {
+                        html = html.replace(
+                            /<head([^>]*)>/i,
+                            `<head$1>
+<base href="${baseURL}">
+`
+                        );
+                    } else {
+                        html =
+                            `<base href="${baseURL}">` +
+                            html;
+                    }
+
+                    /* =================================================
+                       LAUNCHER INFORMATION
+                    ================================================= */
+
+                    const launcherScript = `
+<script>
+    window.__CXZ_LAUNCHED__ = true;
+
+    window.__CXZ_SOURCE_URL__ =
+        ${JSON.stringify(MAIN_URL)};
+<\/script>
+`;
+
+                    html = html.replace(
+                        /<\/head>/i,
+                        launcherScript + "</head>"
+                    );
+
+                    /* =================================================
+                       INTERNAL NAVIGATION ROUTER
+                    ================================================= */
+
+                    const router = `
+<script>
+(() => {
+    const SOURCE_BASE =
+        ${JSON.stringify(baseURL)};
+
+    function resolve(url) {
+        try {
+            return new URL(
+                url,
+                SOURCE_BASE
+            ).href;
+        } catch {
+            return url;
         }
-    );
+    }
 
-    return html;
-}
+    function isInternal(url) {
+        try {
+            const u = new URL(
+                url,
+                SOURCE_BASE
+            );
 
+            return (
+                u.origin ===
+                    new URL(SOURCE_BASE).origin ||
+                u.href.startsWith(SOURCE_BASE)
+            );
 
-/* =========================================================
-   FIX RESOURCE URLS
-========================================================= */
+        } catch {
+            return false;
+        }
+    }
 
-function fixResources(doc, baseURL) {
+    async function loadPage(url) {
+        const absoluteURL = resolve(url);
 
-    const attributes = [
-        "src",
-        "href",
-        "poster",
-        "action"
-    ];
+        try {
+            const response = await fetch(
+                absoluteURL,
+                {
+                    cache: "no-store"
+                }
+            );
 
-    for (const attr of attributes) {
+            if (!response.ok) {
+                throw new Error(
+                    "HTTP " + response.status
+                );
+            }
 
-        doc.querySelectorAll("[" + attr + "]").forEach(el => {
+            let page =
+                await response.text();
 
-            const value = el.getAttribute(attr);
+            const pageBase =
+                absoluteURL.substring(
+                    0,
+                    absoluteURL.lastIndexOf("/") + 1
+                );
 
-            if (!value) return;
+            /*
+             * Remove any existing base tags.
+             */
+
+            page = page.replace(
+                /<base[^>]*>/gi,
+                ""
+            );
+
+            /*
+             * Add the correct base URL.
+             */
+
+            if (/<head[^>]*>/i.test(page)) {
+                page = page.replace(
+                    /<head([^>]*)>/i,
+                    `<head$1>
+<base href="${pageBase}">
+`
+                );
+            } else {
+                page =
+                    `<base href="${pageBase}">` +
+                    page;
+            }
+
+            /*
+             * Replace the current document.
+             */
+
+            document.open();
+            document.write(page);
+            document.close();
+
+        } catch (error) {
+            document.body.innerHTML = `
+                <div style="
+                    width: 100%;
+                    height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: #080808;
+                    color: white;
+                    font-family: Arial;
+                    text-align: center;
+                ">
+                    <div>
+                        <h2>
+                            Unable to load page
+                        </h2>
+
+                        <p style="color: #888;">
+                            ${error.message}
+                        </p>
+
+                        <button
+                            onclick="location.reload()"
+                            style="
+                                padding: 10px 18px;
+                                border: 0;
+                                border-radius: 6px;
+                                background: #ff6600;
+                                color: #000;
+                                cursor: pointer;
+                            "
+                        >
+                            Retry
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    /* =============================================================
+       INTERCEPT INTERNAL LINKS
+    ============================================================= */
+
+    document.addEventListener(
+        "click",
+        event => {
+            const link =
+                event.target.closest("a");
+
+            if (!link) {
+                return;
+            }
+
+            const href =
+                link.getAttribute("href");
+
+            if (!href) {
+                return;
+            }
+
+            /*
+             * Leave anchors, mail links, telephone
+             * links, and javascript links alone.
+             */
 
             if (
-                value.startsWith("#") ||
-                value.startsWith("data:") ||
-                value.startsWith("blob:") ||
-                value.startsWith("javascript:") ||
-                value.startsWith("mailto:") ||
-                value.startsWith("tel:")
+                href.startsWith("#") ||
+                href.startsWith("mailto:") ||
+                href.startsWith("tel:") ||
+                href.startsWith("javascript:")
             ) {
                 return;
             }
 
-            el.setAttribute(
-                attr,
-                absoluteURL(value, baseURL)
-            );
-        });
-    }
-}
+            const absolute =
+                resolve(href);
 
+            if (isInternal(absolute)) {
+                event.preventDefault();
+                event.stopPropagation();
 
-/* =========================================================
-   FIX INTERNAL LINKS
-========================================================= */
-
-function fixLinks(doc, currentURL) {
-
-    doc.querySelectorAll("a[href]").forEach(link => {
-
-        const href = link.getAttribute("href");
-
-        if (!href) return;
-
-        if (
-            href.startsWith("#") ||
-            href.startsWith("javascript:") ||
-            href.startsWith("mailto:") ||
-            href.startsWith("tel:")
-        ) {
-            return;
-        }
-
-        let target;
-
-        try {
-            target = new URL(href, currentURL);
-        } catch {
-            return;
-        }
-
-        /*
-            Only intercept links belonging to our jsDelivr repo.
-        */
-
-        if (
-            target.origin === new URL(REPO).origin &&
-            target.href.startsWith(REPO)
-        ) {
-            link.setAttribute(
-                "data-cxz-url",
-                target.href
-            );
-
-            /*
-                Keep href harmless so the browser does not
-                leave the about:blank document.
-            */
-
-            link.setAttribute("href", "#");
-        }
-    });
-}
-
-
-/* =========================================================
-   INJECT VIRTUAL ROUTER API
-========================================================= */
-
-function injectRouterScript(doc) {
-
-    const script = doc.createElement("script");
-
-    script.textContent = `
-        window.__CXZ_SEARCH__ =
-            ${JSON.stringify(window.__CXZ_SEARCH__ || "")};
-
-        window.__CXZ_VIRTUAL_URL__ =
-            ${JSON.stringify(window.__CXZ_VIRTUAL_URL__ || SITE_URL)};
-
-        window.__CXZ_NAVIGATE__ = function(url) {
-
-            try {
-
-                const absolute =
-                    new URL(
-                        url,
-                        window.__CXZ_VIRTUAL_URL__
-                    ).href;
-
-                if (
-                    typeof window.__CXZ_LOAD_PAGE__ === "function"
-                ) {
-                    window.__CXZ_LOAD_PAGE__(absolute);
-                }
-
-            } catch (e) {
-                console.error("CXZ navigation error:", e);
+                loadPage(absolute);
             }
-        };
-
-        window.virtualNavigate =
-            window.__CXZ_NAVIGATE__;
-
-        window.virtualGame =
-            window.__CXZ_NAVIGATE__;
-    `;
-
-    doc.head.prepend(script);
-}
-
-
-/* =========================================================
-   INSTALL CLICK HANDLER
-========================================================= */
-
-function installClickRouter(win) {
-
-    win.document.addEventListener(
-        "click",
-        function(event) {
-
-            const link =
-                event.target.closest("[data-cxz-url]");
-
-            if (!link) return;
-
-            const url =
-                link.getAttribute("data-cxz-url");
-
-            if (!url) return;
-
-            event.preventDefault();
-            event.stopPropagation();
-
-            if (
-                typeof win.__CXZ_LOAD_PAGE__ === "function"
-            ) {
-                win.__CXZ_LOAD_PAGE__(url);
-            }
-
         },
         true
     );
-}
 
+    /* =============================================================
+       INTERCEPT window.open()
+    ============================================================= */
 
-/* =========================================================
-   INSTALL VIRTUAL LOCATION HELPERS
-========================================================= */
+    const originalOpen =
+        window.open;
 
-function installVirtualAPIs(win) {
+    window.open = function(
+        url,
+        target,
+        features
+    ) {
+        if (url && isInternal(url)) {
+            loadPage(url);
+            return window;
+        }
 
-    win.__CXZ_LOAD_PAGE__ = function(url) {
-        loadVirtualPage(win, url);
+        return originalOpen.call(
+            window,
+            url,
+            target,
+            features
+        );
     };
 
-    win.__CXZ_NAVIGATE__ = function(url) {
-
-        const absolute =
-            new URL(
-                url,
-                win.__CXZ_VIRTUAL_URL__ || SITE_URL
-            ).href;
-
-        loadVirtualPage(win, absolute);
-    };
-
-    win.virtualNavigate =
-        win.__CXZ_NAVIGATE__;
-
-    win.virtualGame =
-        win.__CXZ_NAVIGATE__;
-}
-
-
-/* =========================================================
-   FETCH HTML
-========================================================= */
-
-async function fetchHTML(url) {
-
-    const response = await fetch(url, {
-        cache: "no-store"
-    });
-
-    if (!response.ok) {
-        throw new Error(
-            "HTTP " +
-            response.status +
-            " while loading " +
-            url
-        );
-    }
-
-    return await response.text();
-}
-
-
-/* =========================================================
-   LOAD NORMAL SITE PAGE
-========================================================= */
-
-async function loadVirtualPage(win, requestedURL) {
-
-    try {
-
-        let url =
-            new URL(
-                requestedURL,
-                REPO
-            ).href;
-
-        /*
-            Normalize index.html.
-        */
-
-        if (url.endsWith("/")) {
-            url += "index.html";
-        }
-
-        const isPlayer =
-            url.includes("/g/games/html/player.html");
-
-        const isGame =
-            url.includes("/g/games/html/") &&
-            !isPlayer;
-
-        const baseURL =
-            isGame || isPlayer
-                ? GAME_BASE
-                : getDirectory(url);
-
-        let html =
-            await fetchHTML(url);
-
-        /*
-            Store the virtual URL and query BEFORE
-            the fetched site's scripts execute.
-        */
-
-        win.__CXZ_VIRTUAL_URL__ = url;
-        win.__CXZ_SEARCH__ =
-            getVirtualSearch(url);
-
-        /*
-            CRITICAL:
-            Make window.location.search work virtually.
-        */
-
-        html =
-            rewriteQueryAccess(html);
-
-        /*
-            Fix direct window.location.href navigation.
-        */
-
-        html =
-            rewriteInternalLocationNavigation(html);
-
-
-        const parser =
-            new DOMParser();
-
-        const doc =
-            parser.parseFromString(
-                html,
-                "text/html"
-            );
-
-
-        /* =====================================================
-           BASE URL
-        ===================================================== */
-
-        let base =
-            doc.querySelector("base");
-
-        if (!base) {
-
-            base =
-                doc.createElement("base");
-
-            doc.head.prepend(base);
-        }
-
-        base.href = baseURL;
-
-
-        /* =====================================================
-           RESOURCES
-        ===================================================== */
-
-        fixResources(
-            doc,
-            baseURL
-        );
-
-
-        /* =====================================================
-           INTERNAL LINKS
-        ===================================================== */
-
-        fixLinks(
-            doc,
-            url
-        );
-
-
-        /* =====================================================
-           ROUTER API
-        ===================================================== */
-
-        injectRouterScript(doc);
-
-
-        /*
-            Tell player.html exactly which URL it is supposed
-            to load.
-        */
-
-        if (isPlayer) {
-
-            const params =
-                new URL(
-                    url
-                ).searchParams;
-
-            const game =
-                params.get("url");
-
-            const title =
-                params.get("title");
-
-            if (game) {
-
-                const iframe =
-                    doc.querySelector("#game-iframe");
-
-                if (iframe) {
-
-                    iframe.setAttribute(
-                        "data-cxz-game-url",
-                        game
-                    );
-                }
-            }
-
-            /*
-                Replace the player's query parser so it
-                always gets our virtual parameters.
-            */
-
-            const scripts =
-                doc.querySelectorAll("script");
-
-            scripts.forEach(script => {
-
-                if (!script.textContent) return;
-
-                script.textContent =
-                    script.textContent
-                        .replace(
-                            /new\s+URLSearchParams\s*\(\s*window\.location\.search\s*\)/g,
-                            "new URLSearchParams(window.__CXZ_SEARCH__)"
-                        )
-                        .replace(
-                            /new\s+URLSearchParams\s*\(\s*location\.search\s*\)/g,
-                            "new URLSearchParams(window.__CXZ_SEARCH__)"
-                        );
-            });
-        }
-
-
-        /* =====================================================
-           WRITE PAGE
-        ===================================================== */
-
-        win.document.open();
-
-        win.document.write(
-            "<!DOCTYPE html>" +
-            doc.documentElement.outerHTML
-        );
-
-        win.document.close();
-
-
-        /*
-            Re-install APIs after document replacement.
-        */
-
-        win.__CXZ_VIRTUAL_URL__ = url;
-        win.__CXZ_SEARCH__ =
-            getVirtualSearch(url);
-
-        installVirtualAPIs(win);
-        installClickRouter(win);
-
-
-        /* =====================================================
-           SPECIAL PLAYER FIX
-        ===================================================== */
-
-        if (isPlayer) {
-
-            const params =
-                new URL(
-                    url
-                ).searchParams;
-
-            const gameURL =
-                params.get("url");
-
-            if (gameURL) {
-
-                const iframe =
-                    win.document.querySelector(
-                        "#game-iframe"
+})();
+<\/script>
+`;
+
+                    /* =================================================
+                       INSERT ROUTER
+                    ================================================= */
+
+                    html = html.replace(
+                        /<\/body>/i,
+                        router + "</body>"
                     );
 
-                if (iframe) {
+                    /* =================================================
+                       WRITE INTO ABOUT:BLANK
+                    ================================================= */
 
-                    /*
-                        Resolve relative game paths from
-                        the actual game directory.
-                    */
+                    appWindow.document.open();
 
-                    const resolvedGame =
-                        absoluteURL(
-                            gameURL,
-                            GAME_BASE
-                        );
-
-                    iframe.setAttribute(
-                        "data-cxz-resolved-game",
-                        resolvedGame
+                    appWindow.document.write(
+                        html
                     );
 
+                    appWindow.document.close();
 
-                    /*
-                        The original player has a delayed
-                        iframe.src = gameUrl.
+                    setStatus(
+                        "Launching..."
+                    );
 
-                        Override the iframe's src property
-                        so relative URLs resolve correctly.
-                    */
+                    /* =================================================
+                       CLOSE LAUNCHER PAGE
+                    ================================================= */
+
+                    setTimeout(() => {
+                        window.close();
+                    }, 500);
+
+                } catch (error) {
+                    setStatus(
+                        "Failed to load: " +
+                        error.message
+                    );
 
                     try {
+                        appWindow.document.open();
 
-                        iframe.src =
-                            resolvedGame;
+                        appWindow.document.write(`
+<!DOCTYPE html>
+<html lang="en">
 
-                    } catch (e) {
+<head>
+    <meta charset="UTF-8">
+    <title>Classroom-X-Zone</title>
+</head>
 
-                        console.error(
-                            "Game iframe error:",
-                            e
-                        );
+<body style="
+    margin: 0;
+    background: #080808;
+    color: white;
+    font-family: Arial;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    text-align: center;
+">
+
+    <div>
+        <h1>
+            Classroom-X-Zone
+        </h1>
+
+        <p style="color: #888;">
+            Failed to load the portal.
+        </p>
+
+        <p style="color: #666;">
+            ${error.message}
+        </p>
+
+        <button
+            onclick="location.reload()"
+            style="
+                padding: 10px 20px;
+                border: 0;
+                border-radius: 6px;
+                background: #ff6600;
+                color: #000;
+                cursor: pointer;
+            "
+        >
+            Retry
+        </button>
+    </div>
+
+</body>
+</html>
+                        `);
+
+                        appWindow.document.close();
+
+                    } catch {
+                        // Nothing else to do.
                     }
                 }
             }
-        }
 
-    } catch (error) {
-
-        console.error(error);
-
-        win.document.open();
-
-        win.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Classroom-X-Zone Error</title>
-
-                <style>
-                    body {
-                        margin: 0;
-                        background: #050505;
-                        color: white;
-                        font-family: Arial, sans-serif;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        min-height: 100vh;
-                    }
-
-                    .error {
-                        max-width: 700px;
-                        padding: 30px;
-                        border-radius: 15px;
-                        background: #111;
-                        border: 1px solid #333;
-                    }
-
-                    h1 {
-                        margin-top: 0;
-                    }
-
-                    pre {
-                        white-space: pre-wrap;
-                        color: #ff7777;
-                    }
-                </style>
-            </head>
-
-            <body>
-
-                <div class="error">
-
-                    <h1>Classroom-X-Zone</h1>
-
-                    <p>
-                        The page could not be loaded.
-                    </p>
-
-                    <pre>${escapeHTML(error.message)}</pre>
-
-                </div>
-
-            </body>
-            </html>
-        `);
-
-        win.document.close();
-    }
-}
-
-
-/* =========================================================
-   OPEN ABOUT:BLANK
-========================================================= */
-
-async function openClassroom() {
-
-    const win =
-        window.open(
-            "about:blank",
-            "_blank"
-        );
-
-    if (!win) {
-
-        alert(
-            "Please allow popups for this site."
-        );
-
-        return;
-    }
-
-
-    /*
-        Install the router before loading index.html.
-    */
-
-    installVirtualAPIs(win);
-
-
-    /*
-        Load the actual site.
-    */
-
-    await loadVirtualPage(
-        win,
-        SITE_URL
-    );
-}
-</script>
+            launch();
+        })();
+    </script>
 
 </body>
 </html>
