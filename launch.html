@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classroom-X-Zone Launcher</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0b0b0b;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    button {
+      padding: 16px 30px;
+      border: 0;
+      border-radius: 10px;
+      background: #22c55e;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #16a34a;
+    }
+  </style>
+</head>
+<body>
+
+  <button onclick="launchSite()">Launch Site</button>
+
+  <script>
+    const SITE_URL =
+      "https://cdn.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/index.html";
+
+    const GAME_BASE =
+      "https://cdn.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/g/games/html/";
+
+    async function launchSite() {
+      // Open about:blank immediately so popup blockers are less likely to interfere.
+      const win = window.open("about:blank", "_blank");
+
+      if (!win) {
+        alert("Please allow popups for this site.");
+        return;
+      }
+
+      win.document.open();
+      win.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Loading...</title>
+          <style>
+            body {
+              margin: 0;
+              background: #0b0b0b;
+              color: white;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+              font-family: Arial, sans-serif;
+            }
+          </style>
+        </head>
+        <body>
+          Loading site...
+        </body>
+        </html>
+      `);
+      win.document.close();
+
+      try {
+        // Fetch the main site.
+        const response = await fetch(SITE_URL);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch site: " + response.status);
+        }
+
+        let html = await response.text();
+
+        /*
+         * Rewrite game paths.
+         *
+         * Example:
+         * ./g/games/html/slope.html
+         * becomes:
+         * https://cdn.jsdelivr.net/.../g/games/html/slope.html
+         *
+         * Also handles:
+         * g/games/html/slope.html
+         * /g/games/html/slope.html
+         * ./g/slope.html
+         * g/slope.html
+         */
+        html = rewriteGamePaths(html);
+
+        // Make common relative assets resolve from the CDN repository.
+        html = rewriteAssetPaths(html);
+
+        // Inject the fetched site into about:blank.
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
+
+      } catch (error) {
+        console.error(error);
+
+        win.document.open();
+        win.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Error</title>
+            <style>
+              body {
+                margin: 0;
+                padding: 40px;
+                background: #0b0b0b;
+                color: white;
+                font-family: Arial, sans-serif;
+              }
+
+              h1 {
+                color: #ef4444;
+              }
+
+              pre {
+                white-space: pre-wrap;
+                background: #151515;
+                padding: 15px;
+                border-radius: 8px;
+              }
+            </style>
+          </head>
+          <body>
+            <h1>Unable to load site</h1>
+            <p>The CDN site could not be fetched.</p>
+            <pre>${escapeHTML(error.message)}</pre>
+          </body>
+          </html>
+        `);
+        win.document.close();
+      }
+    }
+
+    function rewriteGamePaths(html) {
+      const cdn = GAME_BASE;
+
+      // Already absolute CDN URLs: leave them alone.
+      html = html.replace(
+        /(?<!https?:\/\/)(["'(])(?:\.\/|\/)?g\/games\/html\/([^"'()\\s?#]+)/gi,
+        `$1${cdn}$2`
+      );
+
+      // ./g/something.html
+      html = html.replace(
+        /(["'(])\.\/g\/([^"'()\\s?#]+\.html)/gi,
+        `$1${cdn}$2`
+      );
+
+      // g/something.html
+      html = html.replace(
+        /(["'(])(?<!\/)g\/([^"'()\\s?#]+\.html)/gi,
+        `$1${cdn}$2`
+      );
+
+      return html;
+    }
+
+    function rewriteAssetPaths(html) {
+      const repoBase =
+        "https://cdn.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/";
+
+      /*
+       * Rewrite local ./images/... paths.
+       */
+      html = html.replace(
+        /(["'(])\.\/(images\/[^"'()\\s]+)/gi,
+        `$1${repoBase}$2`
+      );
+
+      /*
+       * Rewrite ./g/assets/... paths.
+       */
+      html = html.replace(
+        /(["'(])\.\/(g\/assets\/[^"'()\\s]+)/gi,
+        `$1${repoBase}$2`
+      );
+
+      /*
+       * Rewrite ./css/... and ./js/... paths.
+       */
+      html = html.replace(
+        /(["'(])\.\/(css\/[^"'()\\s]+)/gi,
+        `$1${repoBase}$2`
+      );
+
+      html = html.replace(
+        /(["'(])\.\/(js\/[^"'()\\s]+)/gi,
+        `$1${repoBase}$2`
+      );
+
+      return html;
+    }
+
+    function escapeHTML(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+
+</body>
+</html>
