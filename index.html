@@ -436,47 +436,88 @@
             cursor: pointer;
         }
 
-        /* FLOATING DOCK NAVBAR - Matches Image 1 & 2 */
-        .bottom-dock {
-            position: fixed;
-            bottom: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(14, 14, 20, 0.95);
-            border: 1.5px solid var(--accent-color);
-            border-radius: 30px;
-            padding: 6px 14px;
-            box-shadow: 0 0 16px rgba(255, 102, 0, 0.35);
-            z-index: 1000;
-            will-change: transform;
-        }
-        .dock-item {
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--accent-color);
-            text-decoration: none;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            background: transparent;
-            border: none;
-        }
-        .dock-item:hover {
-            color: #fff;
-            background: rgba(255, 102, 0, 0.25);
-        }
-        .dock-item.active {
-            background: var(--accent-color);
-            color: #000;
-            box-shadow: var(--accent-glow);
-        }
+        /* =========================================================
+   FLOATING DOCK NAVBAR
+========================================================= */
 
+.bottom-dock {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    background: rgba(14, 14, 20, 0.95);
+
+    border: 1.5px solid var(--accent-color);
+    border-radius: 30px;
+
+    padding: 6px 14px;
+
+    box-shadow:
+        0 0 16px rgba(255, 102, 0, 0.35);
+
+    /*
+     * Keep the dock above normal homepage content
+     * and the loading screen.
+     */
+    z-index: 99998;
+
+    /*
+     * Make sure it is always visible/clickable.
+     */
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+
+    will-change: transform;
+
+    user-select: none;
+}
+
+.dock-item {
+    width: 34px;
+    height: 34px;
+
+    border-radius: 8px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: var(--accent-color);
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        transform 0.15s ease;
+
+    background: transparent;
+    border: none;
+
+    flex-shrink: 0;
+}
+
+.dock-item:hover {
+    color: #fff;
+    background: rgba(255, 102, 0, 0.25);
+    transform: translateY(-2px);
+}
+
+.dock-item.active {
+    background: var(--accent-color);
+    color: #000;
+
+    box-shadow:
+        var(--accent-glow);
+}
         /* Toast notifications */
         .toast-container {
             position: fixed;
