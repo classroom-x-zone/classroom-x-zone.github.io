@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Launch Site</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Launcher</title>
 
   <style>
     body {
@@ -11,14 +12,14 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #0b0b0b;
+      background: #080808;
       font-family: Arial, sans-serif;
     }
 
     button {
-      padding: 15px 28px;
-      border: 0;
+      border: none;
       border-radius: 10px;
+      padding: 16px 30px;
       background: #22c55e;
       color: white;
       font-size: 18px;
@@ -34,107 +35,61 @@
 
 <body>
 
-<button onclick="launch()">Launch Site</button>
+<button id="launch">Launch Site</button>
 
 <script>
 const REPO =
-"https://cdn.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/";
-
-const INDEX_URL = REPO + "index.html";
+  "https://cdn.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/";
 
 const GAME_BASE =
-REPO + "g/games/html/";
+  REPO + "g/games/html/";
+
+const INDEX_URL =
+  REPO + "index.html";
 
 
-async function launch() {
+document.getElementById("launch").addEventListener("click", () => {
 
   /*
-   * Open about:blank immediately.
+   * Open the blank tab immediately.
    */
   const tab = window.open("about:blank", "_blank");
 
   if (!tab) {
-    alert("Please allow popups.");
+    alert("Please allow popups for this launcher.");
     return;
   }
 
   /*
-   * Loading screen.
+   * Start the loading process.
    */
-  tab.document.open();
+  loadIndex(tab);
+});
 
-  tab.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Loading...</title>
-      <style>
-        body {
-          margin: 0;
-          background: #0b0b0b;
-          color: white;
-          font-family: Arial;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          height: 100vh;
-        }
-      </style>
-    </head>
-    <body>
-      Loading...
-    </body>
-    </html>
-  `);
 
-  tab.document.close();
-
+async function loadIndex(tab) {
 
   try {
 
-    /*
-     * Fetch the actual index.html.
-     */
     const response = await fetch(INDEX_URL);
 
-    if (!response.ok)
-      throw new Error("Could not fetch index.html");
+    if (!response.ok) {
+      throw new Error(
+        "Could not fetch index.html (" +
+        response.status +
+        ")"
+      );
+    }
 
     let html = await response.text();
 
-
     /*
-     * Convert links into local virtual navigation.
-     *
-     * Instead of:
-     *
-     * https://cdn.jsdelivr.net/.../player.html
-     *
-     * the page will call our virtual page loader.
+     * Create a complete virtual-site controller.
      */
-    html = convertNavigation(html);
-
-
-    /*
-     * Convert game URLs.
-     */
-    html = convertGames(html);
-
+    html = preparePage(html);
 
     /*
-     * Convert local assets.
-     */
-    html = convertAssets(html);
-
-
-    /*
-     * Add the virtual-page system.
-     */
-    html = injectVirtualLoader(html);
-
-
-    /*
-     * Put everything into about:blank.
+     * Write the site into about:blank.
      */
     tab.document.open();
     tab.document.write(html);
@@ -142,389 +97,442 @@ async function launch() {
 
   } catch (error) {
 
-    tab.document.open();
+    showError(tab, error);
 
-    tab.document.write(`
-      <body style="
-        background:#0b0b0b;
-        color:white;
-        font-family:Arial;
-        padding:40px;
-      ">
-        <h1>Failed to load site</h1>
-        <p>${escapeHTML(error.message)}</p>
-      </body>
-    `);
-
-    tab.document.close();
   }
 }
 
 
 /*
- * Convert normal page links into virtual navigation.
+ * Adds the virtual navigation system to a page.
  */
-function convertNavigation(html) {
+function preparePage(html) {
 
   /*
-   * href="player.html"
+   * Rewrite local links.
    */
-  html = html.replace(
-    /href=["'](?:\.\/)?([^"'#?]+\.html)(?:\?([^"']*))?["']/gi,
-    function(match, page, query) {
+  html = rewriteLinks(html);
 
-      if (
-        page.startsWith("http://") ||
-        page.startsWith("https://") ||
-        page.startsWith("javascript:")
-      ) {
-        return match;
+  /*
+   * Rewrite assets.
+   */
+  html = rewriteAssets(html);
+
+  /*
+   * Add the navigation controller.
+   */
+  const controller = `
+<script>
+(function() {
+
+  const REPO = ${JSON.stringify(REPO)};
+  const GAME_BASE = ${JSON.stringify(GAME_BASE)};
+
+  /*
+   * Navigate to a normal HTML page.
+   */
+  window.virtualPage = async function(page, query) {
+
+    try {
+
+      page = decodeURIComponent(page);
+
+      query = query
+        ? decodeURIComponent(query)
+        : "";
+
+      const url =
+        REPO +
+        page +
+        (query ? "?" + query : "");
+
+      const response =
+        await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(
+          "Could not load " + page
+        );
       }
 
-      const encodedPage =
-        encodeURIComponent(page);
+      let html =
+        await response.text();
 
-      const encodedQuery =
-        query
-          ? encodeURIComponent(query)
-          : "";
+      /*
+       * Process the newly loaded page too.
+       */
+      html =
+        window.__prepareVirtualPage(html);
 
-      return `href="javascript:virtualPage('${encodedPage}','${encodedQuery}')"`;
-    }
-  );
+      document.open();
+      document.write(html);
+      document.close();
 
-  return html;
-}
+    } catch (error) {
 
+      document.open();
 
-/*
- * Convert game links.
- */
-function convertGames(html) {
-
-  /*
-   * ./g/games/html/game.html
-   */
-  html = html.replace(
-    /href=["'](?:\.\/)?g\/games\/html\/([^"'#?]+)(?:\?([^"']*))?["']/gi,
-    function(match, game, query) {
-
-      const encodedGame =
-        encodeURIComponent(game);
-
-      const encodedQuery =
-        query
-          ? encodeURIComponent(query)
-          : "";
-
-      return `href="javascript:virtualGame('${encodedGame}','${encodedQuery}')"`;
-    }
-  );
-
-
-  /*
-   * ./g/game.html
-   */
-  html = html.replace(
-    /href=["'](?:\.\/)?g\/([^"'#?]+\.html)(?:\?([^"']*))?["']/gi,
-    function(match, game, query) {
-
-      const encodedGame =
-        encodeURIComponent(game);
-
-      const encodedQuery =
-        query
-          ? encodeURIComponent(query)
-          : "";
-
-      return `href="javascript:virtualGame('${encodedGame}','${encodedQuery}')"`;
-    }
-  );
-
-  return html;
-}
-
-
-/*
- * Rewrite assets so they continue working
- * inside about:blank.
- */
-function convertAssets(html) {
-
-  /*
-   * images
-   */
-  html = html.replace(
-    /(["'(])\.\/(images\/[^"'()\s]+)/gi,
-    `$1${REPO}$2`
-  );
-
-  /*
-   * g/assets
-   */
-  html = html.replace(
-    /(["'(])\.\/(g\/assets\/[^"'()\s]+)/gi,
-    `$1${REPO}$2`
-  );
-
-  /*
-   * css
-   */
-  html = html.replace(
-    /(["'(])\.\/(css\/[^"'()\s]+)/gi,
-    `$1${REPO}$2`
-  );
-
-  /*
-   * js
-   */
-  html = html.replace(
-    /(["'(])\.\/(js\/[^"'()\s]+)/gi,
-    `$1${REPO}$2`
-  );
-
-  return html;
-}
-
-
-/*
- * Inject the virtual navigation engine.
- */
-function injectVirtualLoader(html) {
-
-  const script = `
-
-<script>
-
-const __REPO__ =
-"${REPO}";
-
-const __GAME_BASE__ =
-"${GAME_BASE}";
-
-
-/*
- * Load any page into the CURRENT about:blank document.
- */
-async function virtualPage(page, query) {
-
-  page = decodeURIComponent(page);
-  query = decodeURIComponent(query || "");
-
-  const url =
-    __REPO__ + page + (query ? "?" + query : "");
-
-  try {
-
-    const response =
-      await fetch(url);
-
-    if (!response.ok)
-      throw new Error("Page not found: " + page);
-
-    let pageHTML =
-      await response.text();
-
-
-    /*
-     * Process links inside the newly loaded page.
-     */
-    pageHTML =
-      pageHTML.replace(
-        /href=["'](?:\\.\\/)?([^"'#?]+\\.html)(?:\\?([^"']*))?["']/gi,
-        function(match, nextPage, nextQuery) {
-
-          const p =
-            encodeURIComponent(nextPage);
-
-          const q =
-            nextQuery
-              ? encodeURIComponent(nextQuery)
-              : "";
-
-          return 'href="javascript:virtualPage(\\\\'' +
-                 p +
-                 '\\\\',\\\\'' +
-                 q +
-                 '\\\\')"';
-        }
+      document.write(
+        "<!DOCTYPE html>" +
+        "<html><body style=\\"background:#080808;color:white;font-family:Arial;padding:40px\\">" +
+        "<h1>Page failed to load</h1>" +
+        "<p>" +
+        escapeHTML(error.message) +
+        "</p>" +
+        "</body></html>"
       );
 
+      document.close();
+    }
+  };
 
-    /*
-     * Process game links.
-     */
-    pageHTML =
-      pageHTML.replace(
-        /href=["'](?:\\.\\/)?g\\/games\\/html\\/([^"'#?]+)(?:\\?([^"']*))?["']/gi,
-        function(match, game, gameQuery) {
 
-          const g =
-            encodeURIComponent(game);
+  /*
+   * Load a game from /g/games/html/
+   */
+  window.virtualGame = async function(game, query) {
 
-          const q =
-            gameQuery
-              ? encodeURIComponent(gameQuery)
-              : "";
+    try {
 
-          return 'href="javascript:virtualGame(\\\\'' +
-                 g +
-                 '\\\\',\\\\'' +
-                 q +
-                 '\\\\')"';
-        }
+      game = decodeURIComponent(game);
+
+      query = query
+        ? decodeURIComponent(query)
+        : "";
+
+      const url =
+        GAME_BASE +
+        game +
+        (query ? "?" + query : "");
+
+      const response =
+        await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(
+          "Could not load game " + game
+        );
+      }
+
+      let html =
+        await response.text();
+
+      /*
+       * Game-relative files should resolve
+       * against the games folder.
+       */
+      html =
+        rewriteGameAssets(html);
+
+      /*
+       * IMPORTANT:
+       *
+       * We inject the game directly into
+       * the current about:blank document.
+       *
+       * We do NOT navigate to the CDN URL.
+       */
+      document.open();
+      document.write(html);
+      document.close();
+
+    } catch (error) {
+
+      document.open();
+
+      document.write(
+        "<!DOCTYPE html>" +
+        "<html><body style=\\"background:#080808;color:white;font-family:Arial;padding:40px\\">" +
+        "<h1>Game failed to load</h1>" +
+        "<p>" +
+        escapeHTML(error.message) +
+        "</p>" +
+        "</body></html>"
       );
 
-
-    /*
-     * Keep assets working.
-     */
-    pageHTML =
-      pageHTML.replace(
-        /(["'(])\\.\\/(images\\/[^"'()\\\\s]+)/gi,
-        '$1' + __REPO__ + '$2'
-      );
+      document.close();
+    }
+  };
 
 
-    /*
-     * Replace the CURRENT document.
-     *
-     * This is the important part:
-     *
-     * The browser remains on about:blank.
-     */
-    document.open();
+  /*
+   * Make this available to pages loaded later.
+   */
+  window.__prepareVirtualPage = function(html) {
 
-    document.write(pageHTML);
+    html = rewriteLinks(html);
+    html = rewriteAssets(html);
 
-    document.close();
+    return addController(html);
+  };
 
 
-  } catch(error) {
+  function addController(html) {
 
-    document.body.innerHTML = "";
+    if (!html.toLowerCase().includes("</head>")) {
+      return controllerHTML(html);
+    }
 
-    const errorBox =
-      document.createElement("div");
-
-    errorBox.style.cssText =
-      "background:#0b0b0b;color:white;" +
-      "font-family:Arial;padding:40px;" +
-      "min-height:100vh;";
-
-    errorBox.innerHTML =
-      "<h1>Page failed to load</h1>" +
-      "<p>" +
-      escapeHTML(error.message) +
-      "</p>";
-
-    document.body.appendChild(errorBox);
+    return html.replace(
+      /<\\/head>/i,
+      controllerHTML("") + "</head>"
+    );
   }
-}
 
 
-/*
- * Load games without navigating to jsDelivr.
- */
-async function virtualGame(game, query) {
+  function controllerHTML() {
 
-  game =
-    decodeURIComponent(game);
-
-  query =
-    decodeURIComponent(query || "");
-
-
-  const url =
-    __GAME_BASE__ +
-    game +
-    (query ? "?" + query : "");
-
-
-  try {
-
-    const response =
-      await fetch(url);
-
-    if (!response.ok)
-      throw new Error("Game not found: " + game);
-
-
-    let gameHTML =
-      await response.text();
-
-
-    /*
-     * Fix paths inside game HTML.
-     */
-    gameHTML =
-      gameHTML.replace(
-        /(["'(])\\.\\//g,
-        '$1' + __GAME_BASE__
-      );
-
-
-    /*
-     * Stay on the same about:blank tab.
-     */
-    document.open();
-
-    document.write(gameHTML);
-
-    document.close();
-
-
-  } catch(error) {
-
-    document.body.innerHTML = "";
-
-    const box =
-      document.createElement("div");
-
-    box.style.cssText =
-      "background:#0b0b0b;color:white;" +
-      "font-family:Arial;padding:40px;" +
-      "min-height:100vh;";
-
-    box.innerHTML =
-      "<h1>Game failed to load</h1>" +
-      "<p>" +
-      escapeHTML(error.message) +
-      "</p>";
-
-    document.body.appendChild(box);
+    return "";
   }
-}
 
 
-function escapeHTML(str) {
+  function rewriteLinks(html) {
 
-  return String(str)
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
-}
+    /*
+     * Normal .html links.
+     *
+     * Example:
+     * player.html
+     */
+    html = html.replace(
+      /href\\s*=\\s*["'](?:\\.\\/)?([^"'#?]+\\.html)(?:\\?([^"'#]+))?["']/gi,
+      function(match, page, query) {
 
+        return 'href="javascript:virtualPage(' +
+          JSON.stringify(encodeURIComponent(page)) +
+          ',' +
+          JSON.stringify(
+            query
+              ? encodeURIComponent(query)
+              : ""
+          ) +
+          ')"';
+      }
+    );
+
+
+    /*
+     * Games inside g/games/html/.
+     */
+    html = html.replace(
+      /href\\s*=\\s*["'](?:\\.\\/)?g\\/games\\/html\\/([^"'#?]+)(?:\\?([^"'#]+))?["']/gi,
+      function(match, game, query) {
+
+        return 'href="javascript:virtualGame(' +
+          JSON.stringify(encodeURIComponent(game)) +
+          ',' +
+          JSON.stringify(
+            query
+              ? encodeURIComponent(query)
+              : ""
+          ) +
+          ')"';
+      }
+    );
+
+
+    /*
+     * Games inside ./g/.
+     */
+    html = html.replace(
+      /href\\s*=\\s*["'](?:\\.\\/)?g\\/([^"'#?]+\\.html)(?:\\?([^"'#]+))?["']/gi,
+      function(match, game, query) {
+
+        return 'href="javascript:virtualGame(' +
+          JSON.stringify(encodeURIComponent(game)) +
+          ',' +
+          JSON.stringify(
+            query
+              ? encodeURIComponent(query)
+              : ""
+          ) +
+          ')"';
+      }
+    );
+
+    return html;
+  }
+
+
+  function rewriteAssets(html) {
+
+    /*
+     * Root-relative repository assets.
+     */
+    html = html.replace(
+      /(["'(])\\.\\/(images\\/[^"'()\\s]+)/gi,
+      "$1" + REPO + "$2"
+    );
+
+    html = html.replace(
+      /(["'(])\\.\\/(g\\/assets\\/[^"'()\\s]+)/gi,
+      "$1" + REPO + "$2"
+    );
+
+    html = html.replace(
+      /(["'(])\\.\\/(css\\/[^"'()\\s]+)/gi,
+      "$1" + REPO + "$2"
+    );
+
+    html = html.replace(
+      /(["'(])\\.\\/(js\\/[^"'()\\s]+)/gi,
+      "$1" + REPO + "$2"
+    );
+
+    return html;
+  }
+
+
+  function rewriteGameAssets(html) {
+
+    /*
+     * Keep files used by games inside
+     * the game's CDN directory.
+     */
+    html = html.replace(
+      /(["'(])\\.\\//g,
+      "$1" + GAME_BASE
+    );
+
+    return html;
+  }
+
+
+  function escapeHTML(value) {
+
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+})();
 </script>
-
 `;
 
-  return html.replace(
-    /<\\/head>/i,
-    script + "</head>"
-  );
+  /*
+   * Put the controller before </head>.
+   */
+  if (html.match(/<\/head>/i)) {
+
+    return html.replace(
+      /<\/head>/i,
+      controller + "</head>"
+    );
+
+  }
+
+  return controller + html;
 }
 
-function escapeHTML(str) {
 
-  return String(str)
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
+function rewriteLinks(html) {
+
+  /*
+   * Normal pages such as player.html.
+   */
+  html = html.replace(
+    /href\s*=\s*["'](?:\.\/)?([^"'#?]+\.html)(?:\?([^"'#]+))?["']/gi,
+    function(match, page, query) {
+
+      return 'href="javascript:virtualPage(' +
+        JSON.stringify(
+          encodeURIComponent(page)
+        ) +
+        ',' +
+        JSON.stringify(
+          query
+            ? encodeURIComponent(query)
+            : ""
+        ) +
+        ')"';
+    }
+  );
+
+
+  /*
+   * Games.
+   */
+  html = html.replace(
+    /href\s*=\s*["'](?:\.\/)?g\/games\/html\/([^"'#?]+)(?:\?([^"'#]+))?["']/gi,
+    function(match, game, query) {
+
+      return 'href="javascript:virtualGame(' +
+        JSON.stringify(
+          encodeURIComponent(game)
+        ) +
+        ',' +
+        JSON.stringify(
+          query
+            ? encodeURIComponent(query)
+            : ""
+        ) +
+        ')"';
+    }
+  );
+
+  return html;
+}
+
+
+function rewriteAssets(html) {
+
+  html = html.replace(
+    /(["'(])\.\/(images\/[^"'()\s]+)/gi,
+    "$1" + REPO + "$2"
+  );
+
+  html = html.replace(
+    /(["'(])\.\/(g\/assets\/[^"'()\s]+)/gi,
+    "$1" + REPO + "$2"
+  );
+
+  html = html.replace(
+    /(["'(])\.\/(css\/[^"'()\s]+)/gi,
+    "$1" + REPO + "$2"
+  );
+
+  html = html.replace(
+    /(["'(])\.\/(js\/[^"'()\s]+)/gi,
+    "$1" + REPO + "$2"
+  );
+
+  return html;
+}
+
+
+function showError(tab, error) {
+
+  const message =
+    String(error.message)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+  tab.document.open();
+
+  tab.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Error</title>
+    </head>
+    <body style="
+      margin:0;
+      background:#080808;
+      color:white;
+      font-family:Arial;
+      padding:40px;
+    ">
+      <h1>Unable to load site</h1>
+      <p>${message}</p>
+    </body>
+    </html>
+  `);
+
+  tab.document.close();
 }
 </script>
 
