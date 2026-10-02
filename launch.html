@@ -3,22 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Classroom-X-Zone</title>
+    <title>Classroom-X-Zone Launcher</title>
 
     <style>
-        * {
-            box-sizing: border-box;
-        }
-
         html,
         body {
             margin: 0;
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: #080808;
-            color: white;
+            background: #08080c;
+            color: #fff;
             font-family: Arial, sans-serif;
         }
 
@@ -31,62 +26,51 @@
             align-items: center;
             justify-content: center;
 
-            background: #080808;
-
-            z-index: 99999;
+            background: #08080c;
         }
 
-        .logo {
-            font-size: 28px;
-            font-weight: 800;
-            letter-spacing: 2px;
-            margin-bottom: 25px;
-        }
+        h1 {
+            margin: 0 0 25px;
 
-        .logo span {
             color: #ff6600;
+
+            font-size: 26px;
+            letter-spacing: 2px;
+
+            text-shadow:
+                0 0 10px rgba(255, 102, 0, 0.6);
         }
 
         .loader {
-            width: 220px;
-            height: 5px;
+            width: 280px;
+            height: 14px;
 
-            overflow: hidden;
+            padding: 2px;
 
-            border-radius: 10px;
+            border: 2px solid #ff6600;
+            border-radius: 4px;
 
-            background: #222;
+            background: #0e0e16;
+
+            box-shadow:
+                0 0 10px rgba(255, 102, 0, 0.5);
         }
 
-        .loader-bar {
-            width: 0;
+        #bar {
+            width: 0%;
             height: 100%;
 
             background: #ff6600;
 
-            box-shadow:
-                0 0 12px #ff6600;
-
-            animation:
-                cxz-loading 1.5s ease forwards;
+            transition: width 0.15s ease;
         }
 
-        @keyframes cxz-loading {
-            from {
-                width: 0%;
-            }
+        #status {
+            margin-top: 14px;
 
-            to {
-                width: 100%;
-            }
-        }
+            color: #888899;
 
-        .status {
-            margin-top: 15px;
-
-            color: #888;
-
-            font-size: 13px;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -94,79 +78,94 @@
 <body>
 
     <div id="loading">
-
-        <div class="logo">
-            CLASSROOM<span>-X</span>-ZONE
-        </div>
+        <h1>CLASSROOM-X-ZONE</h1>
 
         <div class="loader">
-            <div class="loader-bar"></div>
+            <div id="bar"></div>
         </div>
 
-        <div class="status" id="status">
-            Opening portal...
+        <div id="status">
+            OPENING PORTAL...
         </div>
-
     </div>
 
 
     <script>
         (() => {
 
-            /* =========================================================
-               MAIN SITE
-            ========================================================= */
+            /*
+             * ========================================================
+             * THIS IS THE ONLY SOURCE.
+             *
+             * The launcher fetches the current index.html directly
+             * from GitHub every time it is opened.
+             * ========================================================
+             */
 
-            const MAIN_URL =
-                "https://cdn.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/index.html";
+            const INDEX_URL =
+                "https://raw.githubusercontent.com/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd/refs/heads/main/index.html";
 
+
+            const bar =
+                document.getElementById("bar");
 
             const status =
                 document.getElementById("status");
 
 
-            function setStatus(message) {
-                status.textContent = message;
+            function progress(value) {
+                bar.style.width = value + "%";
             }
 
 
-            /* =========================================================
-               OPEN ABOUT:BLANK IMMEDIATELY
-            ========================================================= */
+            function setStatus(text) {
+                status.textContent = text;
+            }
 
-            const portal =
+
+            /*
+             * ========================================================
+             * OPEN ABOUT:BLANK FIRST
+             * ========================================================
+             */
+
+            const newTab =
                 window.open(
                     "about:blank",
                     "_blank"
                 );
 
 
-            if (!portal) {
+            if (!newTab) {
 
                 setStatus(
-                    "Popup blocked. Allow popups and try again."
+                    "POPUP BLOCKED - ALLOW POPUPS AND TRY AGAIN"
                 );
 
                 return;
             }
 
 
-            /* =========================================================
-               LOAD MAIN SITE
-            ========================================================= */
+            /*
+             * ========================================================
+             * FETCH CURRENT INDEX.HTML
+             * ========================================================
+             */
 
-            async function loadPortal() {
+            async function load() {
 
                 try {
 
                     setStatus(
-                        "Downloading portal..."
+                        "FETCHING LATEST INDEX.HTML..."
                     );
+
+                    progress(10);
 
 
                     const response =
                         await fetch(
-                            MAIN_URL,
+                            INDEX_URL,
                             {
                                 cache: "no-store"
                             }
@@ -183,52 +182,78 @@
                     }
 
 
-                    let html =
-                        await response.text();
+                    progress(40);
 
 
                     setStatus(
-                        "Preparing portal..."
+                        "READING SITE CODE..."
                     );
 
 
-                    /* =================================================
-                       BASE URL
-                    ================================================= */
+                    /*
+                     * THIS IS THE ACTUAL CODE FROM
+                     * YOUR GITHUB INDEX.HTML.
+                     */
 
-                    const BASE_URL =
-                        MAIN_URL.substring(
+                    let siteCode =
+                        await response.text();
+
+
+                    progress(65);
+
+
+                    /*
+                     * =================================================
+                     * IMPORTANT:
+                     *
+                     * Because the code is being moved from
+                     * raw.githubusercontent.com into about:blank,
+                     * relative URLs need to point back to the
+                     * GitHub repository.
+                     *
+                     * Example:
+                     *
+                     * ./g/assets/Geometry-Dash.png
+                     *
+                     * becomes relative to this directory:
+                     *
+                     * https://raw.githubusercontent.com/.../main/
+                     * =================================================
+                     */
+
+                    const baseURL =
+                        INDEX_URL.substring(
                             0,
-                            MAIN_URL.lastIndexOf("/") + 1
+                            INDEX_URL.lastIndexOf("/") + 1
                         );
 
 
                     /*
-                     * Remove any existing base tags.
+                     * Remove an existing base tag if the source
+                     * ever gets one.
                      */
 
-                    html =
-                        html.replace(
+                    siteCode =
+                        siteCode.replace(
                             /<base[^>]*>/gi,
                             ""
                         );
 
 
                     /*
-                     * Add our base URL.
+                     * Insert the correct base URL.
                      */
 
-                    const baseTag = `
-<base href="${BASE_URL}">
-`;
+                    const baseTag =
+                        `<base href="${baseURL}">`;
 
 
                     if (
-                        /<head[^>]*>/i.test(html)
+                        /<head[^>]*>/i.test(siteCode)
                     ) {
 
-                        html =
-                            html.replace(
+                        siteCode =
+                            siteCode.replace(
                                 /<head([^>]*)>/i,
                                 `<head$1>
 ${baseTag}`
@@ -236,439 +261,176 @@ ${baseTag}`
 
                     } else {
 
-                        html =
+                        siteCode =
                             baseTag +
-                            html;
+                            siteCode;
 
                     }
 
 
-                    /* =================================================
-                       LAUNCHER INFORMATION
-                    ================================================= */
-
-                    const launcherInfo = `
-<script>
-window.__CXZ_LAUNCHED__ = true;
-
-window.__CXZ_SOURCE_URL__ =
-    ${JSON.stringify(MAIN_URL)};
-
-window.__CXZ_GAME_BASE__ =
-    ${JSON.stringify(BASE_URL)};
-<\/script>
-`;
-
-
-                    html =
-                        html.replace(
-                            /<\/head>/i,
-                            launcherInfo +
-                            "</head>"
-                        );
-
-
-                    /* =================================================
-                       PLAYER NAVIGATION BRIDGE
-                    ================================================= */
-
-                    const playerBridge = `
-<script>
-(function () {
-
-    /*
-     * This bridge works with the integrated CXZPlayer
-     * that is already inside the current index.html.
-     */
-
-    function handlePlayerLink(event) {
-
-        const link =
-            event.target.closest(
-                'a[href*="player.html"]'
-            );
-
-        if (!link) {
-            return;
-        }
-
-
-        /*
-         * STOP the browser from navigating to
-         * player.html.
-         */
-
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-
-
-        try {
-
-            const href =
-                link.getAttribute("href");
-
-
-            const url =
-                new URL(
-                    href,
-                    document.baseURI
-                );
-
-
-            /*
-             * Extract the actual game URL.
-             */
-
-            const gameURL =
-                url.searchParams.get("url");
-
-
-            /*
-             * Extract game title.
-             */
-
-            const title =
-                url.searchParams.get("title") ||
-                link.dataset.title ||
-                link.querySelector("h3")?.textContent?.trim() ||
-                link.querySelector(".game-title")?.textContent?.trim() ||
-                "Game";
-
-
-            if (!gameURL) {
-
-                console.error(
-                    "[CXZ] No game URL found:",
-                    url.href
-                );
-
-                return;
-            }
-
-
-            /*
-             * Use the integrated player.
-             */
-
-            if (
-                typeof window.CXZPlayer ===
-                "object" &&
-                typeof window.CXZPlayer.open ===
-                "function"
-            ) {
-
-                window.CXZPlayer.open(
-                    gameURL,
-                    title
-                );
-
-                return;
-            }
-
-
-            /*
-             * If the integrated player has not
-             * initialized yet, wait for it.
-             */
-
-            let attempts = 0;
-
-
-            const waitForPlayer =
-                setInterval(() => {
-
-                    attempts++;
-
-
-                    if (
-                        typeof window.CXZPlayer ===
-                        "object" &&
-                        typeof window.CXZPlayer.open ===
-                        "function"
-                    ) {
-
-                        clearInterval(
-                            waitForPlayer
-                        );
-
-
-                        window.CXZPlayer.open(
-                            gameURL,
-                            title
-                        );
-
-                    }
-
-
-                    if (attempts >= 50) {
-
-                        clearInterval(
-                            waitForPlayer
-                        );
-
-                        console.error(
-                            "[CXZ] Integrated player failed to initialize."
-                        );
-
-                    }
-
-                }, 100);
-
-        } catch (error) {
-
-            console.error(
-                "[CXZ] Player navigation error:",
-                error
-            );
-
-        }
-
-    }
-
-
-    /*
-     * CAPTURE PHASE
-     *
-     * This runs before the normal site
-     * click handlers and before target="_blank"
-     * can navigate to player.html.
-     */
-
-    document.addEventListener(
-        "click",
-        handlePlayerLink,
-        true
-    );
-
-
-    /*
-     * Also protect auxiliary mouse events.
-     */
-
-    document.addEventListener(
-        "auxclick",
-        function (event) {
-
-            if (event.button !== 1) {
-                return;
-            }
-
-
-            const link =
-                event.target.closest(
-                    'a[href*="player.html"]'
-                );
-
-
-            if (!link) {
-                return;
-            }
-
-
-            event.preventDefault();
-            event.stopPropagation();
-
-        },
-        true
-    );
-
-
-    console.log(
-        "[CXZ] Integrated player navigation bridge loaded."
-    );
-
-})();
-<\/script>
-`;
-
-
-                    /*
-                     * Insert the bridge BEFORE the
-                     * closing body tag.
-                     */
-
-                    html =
-                        html.replace(
-                            /<\/body>/i,
-                            playerBridge +
-                            "</body>"
-                        );
-
-
-                    /* =================================================
-                       WRITE SITE INTO ABOUT:BLANK
-                    ================================================= */
-
-                    portal.document.open();
-
-
-                    portal.document.write(
-                        html
-                    );
-
-
-                    portal.document.close();
+                    progress(80);
 
 
                     setStatus(
-                        "Portal loaded!"
+                        "OPENING CLASSROOM-X-ZONE..."
                     );
 
 
-                    /* =================================================
-                       CLOSE ORIGINAL LAUNCHER
-                    ================================================= */
+                    /*
+                     * =================================================
+                     * WRITE THE FETCHED CODE DIRECTLY INTO
+                     * THE ABOUT:BLANK TAB.
+                     * =================================================
+                     */
+
+                    newTab.document.open();
+
+                    newTab.document.write(
+                        siteCode
+                    );
+
+                    newTab.document.close();
+
+
+                    progress(100);
+
+
+                    setStatus(
+                        "DONE"
+                    );
+
+
+                    /*
+                     * Close the launcher page.
+                     */
 
                     setTimeout(() => {
-
                         window.close();
-
-                    }, 500);
+                    }, 300);
 
 
                 } catch (error) {
 
                     console.error(
-                        "[CXZ Launcher]",
+                        "Launcher error:",
                         error
                     );
 
 
                     setStatus(
-                        "Failed to load portal."
+                        "FAILED TO LOAD"
                     );
 
 
-                    /* =================================================
-                       ERROR PAGE
-                    ================================================= */
+                    /*
+                     * Show the actual error inside
+                     * the about:blank tab.
+                     */
 
-                    try {
+                    newTab.document.open();
 
-                        portal.document.open();
+                    newTab.document.write(`
+                        <!DOCTYPE html>
 
+                        <html lang="en">
 
-                        portal.document.write(`
-<!DOCTYPE html>
+                        <head>
 
-<html lang="en">
+                            <meta charset="UTF-8">
 
-<head>
+                            <title>
+                                Classroom-X-Zone
+                            </title>
 
-    <meta charset="UTF-8">
+                            <style>
 
-    <title>
-        Classroom-X-Zone
-    </title>
+                                html,
+                                body {
+                                    margin: 0;
+                                    width: 100%;
+                                    height: 100%;
 
-    <style>
+                                    background: #08080c;
+                                    color: white;
 
-        html,
-        body {
-            margin: 0;
-            width: 100%;
-            height: 100%;
+                                    font-family: Arial,
+                                        sans-serif;
+                                }
 
-            background: #080808;
-            color: white;
+                                body {
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
 
-            font-family: Arial, sans-serif;
-        }
+                                    text-align: center;
+                                }
 
-        body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
+                                .error {
+                                    max-width: 600px;
+                                    padding: 30px;
+                                }
 
-            text-align: center;
-        }
+                                h1 {
+                                    color: #ff6600;
+                                }
 
-        .error {
-            max-width: 500px;
-            padding: 30px;
-        }
+                                p {
+                                    color: #888899;
+                                }
 
-        h1 {
-            color: #ff6600;
-        }
+                                pre {
+                                    padding: 15px;
 
-        p {
-            color: #888;
-        }
+                                    border: 1px solid #333;
+                                    border-radius: 6px;
 
-        button {
-            padding: 10px 20px;
+                                    background: #0e0e16;
 
-            border: none;
-            border-radius: 6px;
+                                    color: #ff6666;
 
-            background: #ff6600;
-            color: #000;
+                                    text-align: left;
 
-            font-weight: bold;
+                                    white-space: pre-wrap;
+                                    word-break: break-word;
+                                }
 
-            cursor: pointer;
-        }
+                            </style>
 
-        button:hover {
-            background: #ff8533;
-        }
+                        </head>
 
-    </style>
+                        <body>
 
-</head>
+                            <div class="error">
 
-<body>
+                                <h1>
+                                    CLASSROOM-X-ZONE
+                                </h1>
 
-    <div class="error">
+                                <p>
+                                    Failed to fetch index.html
+                                </p>
 
-        <h1>
-            Classroom-X-Zone
-        </h1>
+                                <pre>${String(error.message)}</pre>
 
-        <p>
-            The portal could not be loaded.
-        </p>
+                            </div>
 
-        <p>
-            ${error.message}
-        </p>
+                        </body>
 
-        <button
-            onclick="location.reload()"
-        >
-            Retry
-        </button>
+                        </html>
+                    `);
 
-    </div>
-
-</body>
-
-</html>
-                        `);
-
-
-                        portal.document.close();
-
-                    } catch (writeError) {
-
-                        console.error(
-                            writeError
-                        );
-
-                    }
+                    newTab.document.close();
 
                 }
 
             }
 
 
-            /* =========================================================
-               START
-            ========================================================= */
+            /*
+             * START
+             */
 
-            loadPortal();
+            load();
 
         })();
     </script>
