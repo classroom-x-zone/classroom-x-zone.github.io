@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,16 +13,20 @@
     <style>
         html,
         body {
-            margin: 0;
             width: 100%;
             height: 100%;
+            margin: 0;
+            padding: 0;
             overflow: hidden;
             background: transparent;
         }
 
         #hk {
             position: fixed;
-            inset: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
 
             width: 100%;
             height: 100%;
@@ -31,8 +34,6 @@
             z-index: 999999;
 
             background: transparent;
-
-            cursor: default;
         }
 
         #hk:hover {
@@ -41,30 +42,28 @@
 
         #loading {
             position: fixed;
-            inset: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+
+            z-index: 1000000;
 
             display: flex;
             align-items: center;
             justify-content: center;
 
             background: #000;
-
             color: #fff;
 
             font-family:
                 Arial,
                 Helvetica,
                 sans-serif;
-
-            z-index: 1000000;
-
-            transition:
-                opacity 0.2s ease;
         }
 
         #loading.hidden {
-            opacity: 0;
-            pointer-events: none;
+            display: none;
         }
 
         .loading-box {
@@ -77,16 +76,18 @@
 
             margin: 0 auto 14px;
 
-            border: 3px solid rgba(255,255,255,.15);
+            border: 3px solid rgba(255, 255, 255, 0.15);
             border-top-color: #fff;
-
             border-radius: 50%;
 
-            animation:
-                spin .7s linear infinite;
+            animation: spin 0.7s linear infinite;
         }
 
         @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
             to {
                 transform: rotate(360deg);
             }
@@ -103,260 +104,176 @@
 
     <div id="loading">
         <div class="loading-box">
-
             <div class="spinner"></div>
 
             <div id="status">
                 Loading...
             </div>
-
         </div>
     </div>
 
     <div id="hk"></div>
 
     <script>
-    (() => {
+        (() => {
+            const SITE_URL =
+                "https://raw.githubusercontent.com/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd/refs/heads/main/index.html";
 
-        /*
-         * =====================================================
-         * CONFIGURATION
-         * =====================================================
-         */
+            const hk =
+                document.getElementById("hk");
 
-        const SITE_URL =
-            "https://raw.githubusercontent.com/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd/refs/heads/main/index.html";
+            const loading =
+                document.getElementById("loading");
 
-
-        /*
-         * =====================================================
-         * ELEMENTS
-         * =====================================================
-         */
-
-        const hk =
-            document.getElementById("hk");
-
-        const loading =
-            document.getElementById("loading");
-
-        const status =
-            document.getElementById("status");
-
-
-        /*
-         * =====================================================
-         * KEEP THE LAUNCHER FOCUSED
-         * =====================================================
-         */
-
-        hk.addEventListener(
-            "mousedown",
-            event => {
-
-                event.preventDefault();
-
-                window.focus();
-
-            }
-        );
-
-
-        /*
-         * =====================================================
-         * CREATE ABOUT:BLANK TAB
-         * =====================================================
-         */
-
-        function openSiteInBlankTab(html) {
-
-            const newWindow =
-                window.open(
-                    "about:blank",
-                    "_blank"
-                );
+            const status =
+                document.getElementById("status");
 
 
             /*
-             * Popup blocked
+             * Keep the launcher focused.
              */
+            hk.addEventListener(
+                "mousedown",
+                (event) => {
+                    event.preventDefault();
+                    window.focus();
+                }
+            );
 
-            if (!newWindow) {
 
-                status.textContent =
-                    "Please allow pop-ups and try again.";
+            /*
+             * Open the fetched site in an
+             * about:blank tab.
+             */
+            function openSiteInBlankTab(html) {
+                const newWindow =
+                    window.open(
+                        "about:blank",
+                        "_blank"
+                    );
 
-                loading.classList.remove(
-                    "hidden"
-                );
+                if (!newWindow) {
+                    status.textContent =
+                        "Please allow pop-ups and try again.";
 
-                return false;
+                    loading.classList.remove(
+                        "hidden"
+                    );
+
+                    return false;
+                }
+
+                const doc =
+                    newWindow.document;
+
+                doc.open();
+
+                doc.write(html);
+
+                doc.close();
+
+                return true;
             }
 
 
             /*
-             * Give the new tab a real document.
+             * Fetch the site's index.html.
              */
+            async function launch() {
+                try {
+                    status.textContent =
+                        "Fetching site...";
 
-            const doc =
-                newWindow.document;
+                    const response =
+                        await fetch(
+                            SITE_URL,
+                            {
+                                cache: "no-store"
+                            }
+                        );
 
-
-            doc.open();
-
-
-            /*
-             * Write the fetched index.html
-             * directly into about:blank.
-             *
-             * The site is therefore NOT opened
-             * at the raw GitHub URL.
-             */
-
-            doc.write(html);
-
-
-            doc.close();
-
-
-            /*
-             * The launcher tab can now disappear.
-             */
-
-            return true;
-        }
-
-
-        /*
-         * =====================================================
-         * FETCH SITE
-         * =====================================================
-         */
-
-        async function launch() {
-
-            try {
-
-                status.textContent =
-                    "Fetching site...";
-
-
-                const response =
-                    await fetch(
-                        SITE_URL,
-                        {
-                            cache:
-                                "no-store"
-                        }
-                    );
-
-
-                if (!response.ok) {
-
-                    throw new Error(
-                        "HTTP " +
-                        response.status
-                    );
-                }
-
-
-                status.textContent =
-                    "Starting site...";
-
-
-                const html =
-                    await response.text();
-
-
-                if (
-                    !html ||
-                    !html.trim()
-                ) {
-
-                    throw new Error(
-                        "The site returned empty HTML."
-                    );
-                }
-
-
-                /*
-                 * Open the fetched HTML inside
-                 * a new about:blank tab.
-                 */
-
-                const opened =
-                    openSiteInBlankTab(
-                        html
-                    );
-
-
-                if (opened) {
+                    if (!response.ok) {
+                        throw new Error(
+                            `HTTP ${response.status}`
+                        );
+                    }
 
                     status.textContent =
-                        "Launching...";
+                        "Starting site...";
+
+                    const html =
+                        await response.text();
+
+                    if (!html.trim()) {
+                        throw new Error(
+                            "The site returned empty HTML."
+                        );
+                    }
 
 
                     /*
-                     * Leave the launcher tab
-                     * blank after successfully
-                     * opening the site.
+                     * Open the fetched HTML
+                     * inside about:blank.
                      */
+                    const opened =
+                        openSiteInBlankTab(
+                            html
+                        );
 
-                    setTimeout(() => {
+                    if (!opened) {
+                        return;
+                    }
 
-                        document.open();
 
-                        document.write(`
-                            <!DOCTYPE html>
-                            <html>
-                            <head>
-                                <meta charset="UTF-8">
-                                <title>Loading...</title>
-                            </head>
-                            <body></body>
-                            </html>
-                        `);
+                    /*
+                     * Clear the launcher page after
+                     * the new tab has been created.
+                     */
+                    setTimeout(
+                        () => {
+                            document.open();
 
-                        document.close();
+                            document.write(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Loading...</title>
+</head>
 
-                    }, 100);
+<body>
+</body>
+</html>
+                            `);
+
+                            document.close();
+                        },
+                        100
+                    );
+
+                } catch (error) {
+                    console.error(
+                        "Launcher error:",
+                        error
+                    );
+
+                    status.textContent =
+                        "Failed to load. Retrying...";
+
+                    setTimeout(
+                        launch,
+                        1500
+                    );
                 }
-
-            } catch (error) {
-
-                console.error(
-                    "Launcher error:",
-                    error
-                );
-
-
-                status.textContent =
-                    "Failed to load. Retrying...";
-
-
-                /*
-                 * Retry after a short delay.
-                 */
-
-                setTimeout(
-                    launch,
-                    1500
-                );
             }
-        }
 
 
-        /*
-         * =====================================================
-         * START
-         * =====================================================
-         */
-
-        launch();
-
-    })();
+            /*
+             * Start the launcher.
+             */
+            launch();
+        })();
     </script>
 
 </body>
 </html>
-```
