@@ -502,6 +502,201 @@
             from { transform: translateX(50px); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+    
+/* =========================================================
+   INTEGRATED GAME PLAYER
+========================================================= */
+#cxz-player {
+    position: fixed;
+    inset: 0;
+    z-index: 200000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: #08080c;
+    color: #fff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+#cxz-player.open { display: flex; }
+#cxz-player .cxz-particles {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 50% 85%, #2a1100 0%, #0d0602 45%, #050406 100%);
+}
+#cxz-player .cxz-stage {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 78vw;
+    max-width: 1200px;
+    height: 82vh;
+}
+#cxz-player .cxz-window {
+    position: relative;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    border-radius: 12px;
+    border: 2px solid var(--accent-color);
+    box-shadow: 0 0 20px rgba(255,102,0,.35);
+    background: #1b1b22;
+    overflow: hidden;
+}
+#cxz-player .cxz-close {
+    position: absolute;
+    top: 10px;
+    width: 24px;
+    height: 24px;
+    z-index: 30;
+    border: 1px solid rgba(255,255,255,.4);
+    border-radius: 4px;
+    background: rgba(0,0,0,.6);
+    color: #ddd;
+    cursor: pointer;
+}
+#cxz-player .cxz-close:hover {
+    background: var(--accent-color);
+    color: #000;
+}
+#cxz-player .cxz-close.left { left: 10px; }
+#cxz-player .cxz-close.right { right: 10px; }
+#cxz-player .cxz-loader {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #1e1e24;
+    transition: opacity .4s ease;
+}
+#cxz-player .cxz-loader.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+#cxz-player .cxz-unity-logo {
+    width: 110px;
+    height: 110px;
+    margin-bottom: 25px;
+    animation: cxz-pulse 2.5s ease-in-out infinite;
+}
+@keyframes cxz-pulse {
+    0%,100% { transform:scale(1); opacity:.95; }
+    50% { transform:scale(1.04); opacity:1; }
+}
+#cxz-player .cxz-progress-track {
+    width: 180px;
+    height: 12px;
+    padding: 2px;
+    overflow: hidden;
+    border: 1px solid #444455;
+    border-radius: 2px;
+    background: #0d0d12;
+}
+#cxz-player .cxz-progress-fill {
+    width: 0;
+    height: 100%;
+    background: #fff;
+    transition: width .12s linear;
+}
+#cxz-player .cxz-frame-wrap,
+#cxz-player .cxz-game-frame {
+    width: 100%;
+    height: 100%;
+}
+#cxz-player .cxz-game-frame {
+    display: block;
+    border: 0;
+    background: #000;
+}
+#cxz-player .cxz-toolbar {
+    width: 100%;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--accent-color);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+}
+#cxz-player .cxz-tool-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+#cxz-player .cxz-tool {
+    width: 28px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--accent-color);
+    border-radius: 4px;
+    background: #0c0c12;
+    color: var(--accent-color);
+    cursor: pointer;
+}
+#cxz-player .cxz-tool:hover {
+    background: var(--accent-color);
+    color: #000;
+}
+#cxz-player .cxz-volume {
+    height: 26px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border: 1px solid var(--accent-color);
+    border-radius: 4px;
+    background: #0c0c12;
+}
+#cxz-player .cxz-volume input { width: 65px; }
+#cxz-player .cxz-title {
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--accent-color);
+    text-shadow: var(--accent-glow);
+    text-align: center;
+}
+#cxz-player .cxz-console {
+    position: fixed;
+    right: 20px;
+    bottom: 70px;
+    z-index: 210000;
+    width: 360px;
+    height: 180px;
+    display: none;
+    flex-direction: column;
+    padding: 10px;
+    border: 1px solid var(--accent-color);
+    border-radius: 8px;
+    background: #09090f;
+    box-shadow: 0 0 15px rgba(0,0,0,.8);
+    font: 12px monospace;
+}
+#cxz-player .cxz-console.open { display: flex; }
+#cxz-player .cxz-console-output {
+    flex: 1;
+    overflow: auto;
+    margin-top: 8px;
+    white-space: pre-wrap;
+    color: #00ff66;
+}
+@media (max-width:900px) {
+    #cxz-player .cxz-stage { width:96vw; height:80vh; }
+    #cxz-player .cxz-volume { display:none; }
+    #cxz-player .cxz-title { max-width:150px; font-size:9px; }
+}
+
     </style>
 </head>
 <body>
@@ -847,6 +1042,72 @@
         </div>
 
     </div>
+
+
+<!-- =========================================================
+     INTEGRATED GAME PLAYER
+========================================================= -->
+<div id="cxz-player" aria-hidden="true">
+    <canvas class="cxz-particles" id="cxz-player-particles"></canvas>
+
+    <div class="cxz-stage">
+        <div class="cxz-window" id="cxz-game-window">
+            <button class="cxz-close left" onclick="CXZPlayer.close()" title="Close">✕</button>
+            <button class="cxz-close right" onclick="CXZPlayer.close()" title="Close">✕</button>
+
+            <div class="cxz-loader" id="cxz-loader">
+                <svg class="cxz-unity-logo" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M128 32L54 75.2V161.6L128 204.8L202 161.6V75.2L128 32Z" stroke="white" stroke-width="12" stroke-linejoin="round"/>
+                    <path d="M128 32V118.4M54 161.6L128 118.4M202 161.6L128 118.4" stroke="white" stroke-width="12" stroke-linejoin="round"/>
+                    <path d="M102 74L128 89L154 74M82 120L108 135V165M174 120L148 135V165" stroke="white" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <div class="cxz-progress-track">
+                    <div class="cxz-progress-fill" id="cxz-progress"></div>
+                </div>
+            </div>
+
+            <div class="cxz-frame-wrap">
+                <iframe
+                    id="cxz-game-frame"
+                    class="cxz-game-frame"
+                    allowfullscreen
+                    allow="autoplay; fullscreen; gamepad; focus-without-user-activation *"
+                    title="Game"></iframe>
+            </div>
+        </div>
+
+        <div class="cxz-toolbar">
+            <div class="cxz-tool-group">
+                <button class="cxz-tool" onclick="CXZPlayer.openBlank()" title="About:Blank">▣</button>
+                <button class="cxz-tool" onclick="CXZPlayer.openNewTab()" title="Open in New Tab">↗</button>
+                <div class="cxz-volume">
+                    🔊
+                    <input id="cxz-volume-slider" type="range" min="0" max="100" value="100">
+                    <span id="cxz-volume-text">100%</span>
+                </div>
+            </div>
+
+            <div class="cxz-title" id="cxz-game-title">Game Title</div>
+
+            <div class="cxz-tool-group">
+                <button class="cxz-tool" onclick="CXZPlayer.toggleConsole()" title="Console">&gt;_</button>
+                <button class="cxz-tool" onclick="CXZPlayer.reload()" title="Reload">↻</button>
+                <button class="cxz-tool" onclick="CXZPlayer.download()" title="Download">↓</button>
+                <button class="cxz-tool" onclick="CXZPlayer.fullscreen()" title="Fullscreen">⛶</button>
+                <button class="cxz-tool" onclick="CXZPlayer.close()" title="Close">×</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="cxz-console" id="cxz-console">
+        <div style="display:flex;justify-content:space-between;color:var(--accent-color)">
+            <span>Console Log</span>
+            <button onclick="CXZPlayer.toggleConsole()" style="background:none;border:0;color:inherit;cursor:pointer">✕</button>
+        </div>
+        <div class="cxz-console-output" id="cxz-console-output">[System] Game Player Ready...</div>
+    </div>
+</div>
+
 
     <!-- Floating Bottom Dock Navigation Bar - Identical to Image 1 & 2 with Lucide Icons -->
     <nav class="bottom-dock">
@@ -1653,6 +1914,192 @@ setTimeout(function() {
         }
 
         requestAnimationFrame(renderBg);
-    </script>
+    
+
+/* =========================================================
+   INTEGRATED GAME PLAYER SCRIPT
+========================================================= */
+const CXZ_GAME_BASE = 'https://cdn.jsdelivr.net/gh/shajhgsjhgajshgkjajasfhlkahlalfd/shajhgsjhgajshgkjajasfhlkahlalfd@main/g/games/html/';
+
+const CXZPlayer = (() => {
+    let currentGame = '';
+    let currentTitle = '';
+    let progressTimer = null;
+    let progress = 0;
+
+    const $ = id => document.getElementById(id);
+
+    function absoluteGameURL(url) {
+        try { return new URL(url, CXZ_GAME_BASE).href; }
+        catch { return url; }
+    }
+
+    function log(message) {
+        const out = $('cxz-console-output');
+        if (!out) return;
+        out.textContent += '\n' + message;
+        out.scrollTop = out.scrollHeight;
+    }
+
+    function showToast(message) {
+        if (typeof window.showToast === 'function') {
+            window.showToast(message);
+        }
+    }
+
+    function resetLoader() {
+        clearInterval(progressTimer);
+        progress = 0;
+        $('cxz-progress').style.width = '0%';
+        $('cxz-loader').classList.remove('hidden');
+    }
+
+    function startLoader() {
+        resetLoader();
+        progressTimer = setInterval(() => {
+            progress += Math.floor(Math.random() * 18) + 8;
+            if (progress > 100) progress = 100;
+            $('cxz-progress').style.width = progress + '%';
+
+            if (progress >= 100) {
+                clearInterval(progressTimer);
+                setTimeout(() => {
+                    $('cxz-loader').classList.add('hidden');
+                    log('[Loaded] ' + currentTitle + ' loaded successfully.');
+                    showToast(currentTitle + ' loaded');
+                }, 250);
+            }
+        }, 80);
+    }
+
+    function open(url, title) {
+        currentGame = absoluteGameURL(url);
+        currentTitle = title || 'Game';
+
+        $('cxz-game-title').textContent = currentTitle;
+        $('cxz-player').classList.add('open');
+        $('cxz-player').setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+
+        $('cxz-game-frame').src = 'about:blank';
+        startLoader();
+
+        setTimeout(() => {
+            $('cxz-game-frame').src = currentGame;
+        }, 50);
+    }
+
+    function close() {
+        clearInterval(progressTimer);
+        $('cxz-game-frame').src = 'about:blank';
+        $('cxz-player').classList.remove('open');
+        $('cxz-player').setAttribute('aria-hidden', 'true');
+        $('cxz-console').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    function reload() {
+        if (!currentGame) return;
+        $('cxz-game-frame').src = 'about:blank';
+        startLoader();
+        setTimeout(() => {
+            $('cxz-game-frame').src = currentGame;
+        }, 150);
+        showToast(currentTitle + ' reloading');
+    }
+
+    function fullscreen() {
+        const frame = $('cxz-game-frame');
+        const win = $('cxz-game-window');
+        if (!document.fullscreenElement) {
+            (win.requestFullscreen || win.webkitRequestFullscreen).call(win);
+        } else {
+            (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+        }
+    }
+
+    function openNewTab() {
+        if (!currentGame) return;
+        window.open(currentGame, '_blank', 'noopener');
+    }
+
+    function openBlank() {
+        if (!currentGame) return;
+        const win = window.open('about:blank', '_blank');
+        if (!win) {
+            alert('Pop-ups are blocked. Please allow pop-ups for this site.');
+            return;
+        }
+        const doc = win.document;
+        doc.open();
+        doc.write('<!doctype html><html><head><title>' +
+            String(currentTitle).replace(/[<>&\"]/g, '') +
+            '</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}iframe{width:100%;height:100%;border:0}</style></head><body><iframe allowfullscreen src="' +
+            currentGame.replace(/&/g, '&amp;').replace(/"/g, '&quot;') +
+            '"></iframe></body></html>');
+        doc.close();
+    }
+
+    async function download() {
+        if (!currentGame) return;
+        showToast('Preparing download...');
+        try {
+            const response = await fetch(currentGame);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const html = await response.text();
+            const blob = new Blob([html], {type:'text/html'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = currentGame.split('/').pop() || 'game.html';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            showToast('Game downloaded');
+        } catch (e) {
+            log('[Download Error] ' + e.message);
+            alert('Could not fetch game file for download.');
+        }
+    }
+
+    function toggleConsole() {
+        $('cxz-console').classList.toggle('open');
+    }
+
+    $('cxz-volume-slider').addEventListener('input', e => {
+        $('cxz-volume-text').textContent = e.target.value + '%';
+        /* Browser iframes cannot have their media volume changed generically.
+           This control is retained for the player's original UI behavior. */
+    });
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && $('cxz-player').classList.contains('open') && !document.fullscreenElement) {
+            close();
+        }
+    });
+
+    return { open, close, reload, fullscreen, openNewTab, openBlank, download, toggleConsole };
+})();
+
+/* Intercept every existing/future game-player card. */
+document.addEventListener('click', event => {
+    const card = event.target.closest('a[href*="/g/games/html/player.html"]');
+    if (!card) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    try {
+        const url = new URL(card.href, location.href);
+        const gameURL = url.searchParams.get('url');
+        const title = url.searchParams.get('title') || card.dataset.title || card.querySelector('h3')?.textContent || 'Game';
+        if (gameURL) CXZPlayer.open(gameURL, title);
+    } catch (e) {
+        console.error('Game player error:', e);
+    }
+}, true);
+
+</script>
 </body>
 </html>
